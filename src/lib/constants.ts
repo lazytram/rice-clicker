@@ -1,0 +1,1 @@
+export const DEFAULT_RACE_THRESHOLD = 250;
