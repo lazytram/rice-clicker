@@ -1,0 +1,70 @@
+.rk-btn {
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+}
+.rk-btn.primary {
+  color: #0b1b14;
+  background-image: linear-gradient(90deg, #22c55e, #10b981 50%, #06b6d4);
+  border: 1px solid rgba(255,255,255,0.35);
+}
+.rk-btn.primary:hover { transform: translateY(-1px); filter: saturate(1.05); }
+.rk-btn:active { transform: translateY(0); }
+
+.rk-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 8px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  white-space: nowrap; /* keep pill compact like HUD */
+}
+.rk-address { font-variant-numeric: tabular-nums; letter-spacing: 0.2px; color: #0f172a; opacity: 0.95; }
+.rk-address-dim { color: #334155; opacity: 0.85; }
+.rk-avatar { width: 22px; height: 22px; border-radius: 9999px; background: #0ea5e9; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+.rk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 9999px; background: #111827; color: #e5e7eb; font-size: 12px; }
+.rk-dot { width: 8px; height: 8px; border-radius: 9999px; }
+
+.rk-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  min-width: 260px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.16);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  z-index: 60;
+}
+.rk-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; font-size: 14px; }
+.rk-item:hover { background: rgba(0,0,0,0.04); }
+.rk-menu .rk-head { padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-between; }
+
+/* Responsive tweaks for wallet */
+@media (max-width: 640px) {
+  .rk-btn { padding: 8px 10px; font-size: 13px; }
+  .rk-account { gap: 8px; padding: 6px 8px 6px 6px; }
+  .rk-avatar { width: 18px; height: 18px; font-size: 10px; }
+  .rk-badge { display: none; }
+}
+
+/* Positioning for wallet dropdown menu */
+.rk-wrap { position: relative; }
+
+/* Motion safety */
+@media (prefers-reduced-motion: reduce) {
+  .rk-btn, .rk-account { transition: none !important; }
+}
+
+/* Generic pointer cursors for interactive elements */
+button, [role="button"], .rk-btn { cursor: pointer; }
+button:disabled, [role="button"][aria-disabled="true"], .rk-btn:disabled { cursor: not-allowed; }

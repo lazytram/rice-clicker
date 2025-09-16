@@ -49,7 +49,7 @@ export function usePresence({
     heartbeat.mutate();
     const id = window.setInterval(() => heartbeat.mutate(), 5000);
     return () => window.clearInterval(id);
-  }, [address, name, color]);
+  }, [address, name, color, heartbeat]);
 
   return {
     peers: query.data?.active ?? [],

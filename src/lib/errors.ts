@@ -59,7 +59,7 @@ export function isInsufficientFunds(err: unknown): boolean {
   return (
     msg.includes("insufficient funds") ||
     msg.includes("insufficient balance") ||
-    msg.includes("gas required exceeds allowance")
+    msg.includes("insufficient funds for intrinsic transaction cost")
   );
 }
 

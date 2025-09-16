@@ -1,0 +1,22 @@
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  /* Approximate horizontal center of Mount Fuji in background */
+  --fuji-center: 36vw;
+  /* Base computed left position for the pagoda relative to Fuji */
+  --pagoda-left-base: calc(var(--fuji-center) - min(32vw, 420px));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}

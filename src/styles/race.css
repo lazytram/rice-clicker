@@ -1,0 +1,27 @@
+.race-track { position: relative; background: linear-gradient(#d6a770, #d1a06a); border-radius: 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); overflow: hidden; }
+.race-barrier { position: absolute; left: 0; right: 0; height: 8px; background: repeating-linear-gradient(90deg, #fff 0 20px, #eee 20px 40px); opacity: 0.95; border-top: 1px solid rgba(0,0,0,0.08); border-bottom: 1px solid rgba(0,0,0,0.08); }
+.race-lane-sep { position: absolute; left: 0; right: 0; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,255,255,0.8) 0 10px, rgba(255,255,255,0.0) 10px 20px); opacity: 0.9; }
+
+/* Enhanced Race Track */
+.race-track {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
+  background:
+    linear-gradient(to bottom,
+      #2f7f32 0%,
+      #2f7f32 12%,
+      #d9b789 12%,
+      #d1a66e 84%,
+      #2f7f32 84%,
+      #2f7f32 100%);
+}
+.race-rail { position: absolute; left: 0; right: 0; top: 58%; height: 8px; background: #ffffff; box-shadow: 0 2px 0 rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.06) inset; }
+.race-posts { position: absolute; left: 0; right: 0; top: calc(58% + 8px); height: 28px; background-image: repeating-linear-gradient(to right, transparent 0 56px, #ffffff 56px 60px, transparent 60px 120px); opacity: 0.9; }
+.race-top-rail { position: absolute; left: 0; right: 0; top: 6%; height: 14px; background-image: repeating-linear-gradient(to right, #ffffff 0 18px, transparent 18px 42px); opacity: 0.85; }
+.race-lane-sep { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed rgba(255,255,255,0.75); top: 0; }
+
+.confetti-piece { position: absolute; border-radius: 2px; opacity: 0; animation-name: confetti-fall; animation-timing-function: ease-in; animation-iteration-count: 1; }
+@keyframes confetti-fall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(120%) rotate(360deg); opacity: 0; } }

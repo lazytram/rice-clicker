@@ -1,6 +1,12 @@
 export const RaceRegistryAbi = [
   {
     type: "event",
+    name: "FinalizerUpdated",
+    inputs: [{ name: "finalizer", type: "address", indexed: true }],
+    anonymous: false,
+  },
+  {
+    type: "event",
     name: "NameUpdated",
     inputs: [
       { name: "player", type: "address", indexed: true },
@@ -40,6 +46,26 @@ export const RaceRegistryAbi = [
     anonymous: false,
   },
   {
+    type: "event",
+    name: "WinnerGameProposed",
+    inputs: [
+      { name: "id", type: "uint64", indexed: true },
+      { name: "winner", type: "address", indexed: true },
+      { name: "uri", type: "string", indexed: false },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "WinnerGameSaved",
+    inputs: [
+      { name: "id", type: "uint64", indexed: true },
+      { name: "winner", type: "address", indexed: true },
+      { name: "uri", type: "string", indexed: false },
+    ],
+    anonymous: false,
+  },
+  {
     type: "function",
     stateMutability: "nonpayable",
     name: "setName",
@@ -51,6 +77,27 @@ export const RaceRegistryAbi = [
     stateMutability: "nonpayable",
     name: "setColor",
     inputs: [{ name: "rgb", type: "uint24" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "owner",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "finalizer",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "setFinalizer",
+    inputs: [{ name: "next", type: "address" }],
     outputs: [],
   },
   {
@@ -84,5 +131,36 @@ export const RaceRegistryAbi = [
       { name: "finishTotals", type: "uint256[]" },
     ],
     outputs: [],
+  },
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "proposeWinnerGame",
+    inputs: [
+      { name: "id", type: "uint64" },
+      { name: "uri", type: "string" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "validateWinnerGame",
+    inputs: [{ name: "id", type: "uint64" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "winnerGameUriByRaceId",
+    inputs: [{ name: "", type: "uint64" }],
+    outputs: [{ name: "", type: "string" }],
+  },
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "pendingWinnerGameUriByRaceId",
+    inputs: [{ name: "", type: "uint64" }],
+    outputs: [{ name: "", type: "string" }],
   },
 ] as const;

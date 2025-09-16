@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rice Clicker",
-  description: "Grow your rice!",
+  title: "Race Clicker",
+  description: "Race your friends!",
 };
 
 export default function RootLayout({
