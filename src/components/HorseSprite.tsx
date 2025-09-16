@@ -108,7 +108,7 @@ export default function HorseSprite({
         height="256"
         preserveAspectRatio="xMidYMid meet"
       />
-      <g filter={`url(#innerShadow-${uid})`}>
+      <g filter={`url(#innerShadow-${uid})`} transform="translate(-10, 0)">
         {/* Saddle pad */}
         <rect
           x="96"

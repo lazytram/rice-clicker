@@ -263,7 +263,7 @@ export default function LiveActivity() {
       <style jsx>{`
         .live-activity {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 65px);
+          top: calc(env(safe-area-inset-top, 0px) + 84px);
           left: calc(env(safe-area-inset-left, 0px) + 16px);
           display: inline-flex;
           flex-direction: column;
@@ -409,7 +409,7 @@ export default function LiveActivity() {
         }
         @media (max-width: 640px) {
           .live-activity {
-            top: calc(env(safe-area-inset-top, 0px) + 76px);
+            top: calc(env(safe-area-inset-top, 0px) + 96px);
             left: calc(env(safe-area-inset-left, 0px) + 10px);
           }
           .row {
@@ -430,7 +430,7 @@ export default function LiveActivity() {
 
         @media (max-width: 420px) {
           .live-activity {
-            top: calc(env(safe-area-inset-top, 0px) + 70px);
+            top: calc(env(safe-area-inset-top, 0px) + 88px);
             left: calc(env(safe-area-inset-left, 0px) + 8px);
           }
           .live-list {
