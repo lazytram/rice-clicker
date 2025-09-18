@@ -228,15 +228,12 @@ export default function RaceLobbyControls({
           >
             Join
           </button>
-        ) : (
-          <button
-            onClick={onLeave}
-            disabled={!lobby || lobby.status !== "waiting"}
-            className="rk-btn danger"
-          >
+        ) : lobby?.status === "waiting" &&
+          lobby?.players.length < lobby?.capacity ? (
+          <button onClick={onLeave} className="rk-btn danger">
             Leave
           </button>
-        ))}
+        ) : null)}
     </div>
   );
 }

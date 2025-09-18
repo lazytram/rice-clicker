@@ -3,7 +3,6 @@
 import React from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
-import { Howl } from "howler";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   encodeFunctionData,
