@@ -240,7 +240,10 @@ export default function HorseRace() {
         />
       </div>
 
-      <CountdownBanner visible={status === "countdown"} />
+      <CountdownBanner
+        status={status}
+        endsAt={lobby?.countdownEndsAt ?? null}
+      />
 
       <div className="hud-card p-0 text-slate-900">
         <RaceTrack

@@ -2,20 +2,55 @@
 
 import React from "react";
 
-export default function CountdownBanner({ visible }: { visible: boolean }) {
-  if (!visible) return null;
+type RaceStatus = "waiting" | "countdown" | "running" | "finished";
+
+export default function CountdownBanner({
+  status,
+  endsAt,
+}: {
+  status?: RaceStatus;
+  endsAt?: number | null;
+}) {
+  const [now, setNow] = React.useState<number>(() => Date.now());
+  const [showGo, setShowGo] = React.useState(false);
+  const prevStatus = React.useRef<RaceStatus | undefined>(status);
+
+  const isCounting = status === "countdown" && !!endsAt;
+
+  React.useEffect(() => {
+    if (!isCounting) return;
+    const id = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(id);
+  }, [isCounting]);
+
+  React.useEffect(() => {
+    if (prevStatus.current === "countdown" && status === "running") {
+      setShowGo(true);
+      const t = setTimeout(() => setShowGo(false), 850);
+      return () => clearTimeout(t);
+    }
+    prevStatus.current = status;
+  }, [status]);
+
+  let content: React.ReactNode = null;
+  if (isCounting && endsAt) {
+    const msLeft = Math.max(0, endsAt - now);
+    const secLeft = Math.max(1, Math.min(3, Math.ceil(msLeft / 1000)));
+    content = (
+      <div key={secLeft} className="countdown-number">
+        {secLeft}
+      </div>
+    );
+  } else if (showGo) {
+    content = <div className="countdown-go">GO!</div>;
+  }
+
+  if (!content) return null;
+
   return (
-    <div
-      className="pointer-events-none rounded-2xl px-6 py-3 text-white font-extrabold tracking-wide"
-      style={{
-        background: "rgba(0,0,0,0.45)",
-        boxShadow: "0 18px 40px rgba(0,0,0,0.25)",
-        textShadow: "0 3px 10px rgba(0,0,0,0.6)",
-        fontSize: "clamp(28px, 6vw, 72px)",
-        letterSpacing: "1px",
-      }}
-    >
-      3..2..1..Go!
+    <div className="countdown-overlay">
+      <div className="countdown-backdrop" />
+      <div className="countdown-bubble">{content}</div>
     </div>
   );
 }
