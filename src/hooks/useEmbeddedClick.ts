@@ -71,23 +71,20 @@ export function useEmbeddedClick({
         functionName: "click",
         args: [],
       });
-      // Estimate gas and prefer legacy tx with ultra-low gasPrice (env override)
+      // Estimate gas (same as clicker)
       const gasEstimated = await publicClient.estimateGas({
         account: account.address,
         to: contractAddress,
         data,
       });
-      const gas = (gasEstimated * BigInt(101)) / BigInt(100);
-      const envPrice =
-        typeof process !== "undefined" && process.env.NEXT_PUBLIC_GAS_PRICE_WEI
-          ? BigInt(process.env.NEXT_PUBLIC_GAS_PRICE_WEI)
-          : BigInt(1);
-      const gasPrice = envPrice < BigInt(0) ? BigInt(0) : envPrice;
+      const gas = (gasEstimated * BigInt(105)) / BigInt(100);
+      const GAS_TIP = 1n;
+      const DEFAULT_GAS_PRICE = 1n;
 
-      // Optional pre-check to avoid false "insufficient funds" popups
+      // Optional pre-check (same assumptions as clicker)
       try {
         const bal = await publicClient.getBalance({ address: account.address });
-        const required = gas * gasPrice;
+        const required = gas * DEFAULT_GAS_PRICE;
         if (bal < required) {
           onInsufficientFunds?.();
           show({
@@ -99,35 +96,44 @@ export function useEmbeddedClick({
         }
       } catch {}
 
-      let serialized: `0x${string}`;
-      // Force legacy (type-0) to avoid baseFee on EIP-1559 chains
-      try {
-        serialized = await client.signTransaction({
-          chain: riseTestnet,
-          account,
-          to: contractAddress,
-          data,
-          nonce: Number(nonce),
-          gas,
-          gasPrice,
-        });
-      } catch {
-        // Fallback to EIP-1559 with 1 wei priority fee
-        const block = await publicClient.getBlock({ blockTag: "pending" });
-        const tip = BigInt(1);
-        const base = block.baseFeePerGas ?? BigInt(0);
-        const maxFeePerGas = base + tip;
-        serialized = await client.signTransaction({
-          chain: riseTestnet,
-          account,
-          to: contractAddress,
-          data,
-          nonce: Number(nonce),
-          gas,
-          maxFeePerGas,
-          maxPriorityFeePerGas: tip,
-        });
-      }
+      const serialized: `0x${string}` = await (async () => {
+        // Match clicker: prefer EIP-1559 if baseFee present, else legacy. Fallback to legacy on error.
+        try {
+          const block = await publicClient.getBlock({ blockTag: "pending" });
+          if (block.baseFeePerGas != null) {
+            const maxFeePerGas = block.baseFeePerGas + GAS_TIP;
+            return client.signTransaction({
+              chain: riseTestnet,
+              account,
+              to: contractAddress,
+              data,
+              nonce: Number(nonce),
+              gas,
+              maxFeePerGas,
+              maxPriorityFeePerGas: GAS_TIP,
+            });
+          }
+          return client.signTransaction({
+            chain: riseTestnet,
+            account,
+            to: contractAddress,
+            data,
+            nonce: Number(nonce),
+            gas,
+            gasPrice: DEFAULT_GAS_PRICE,
+          });
+        } catch {
+          return client.signTransaction({
+            chain: riseTestnet,
+            account,
+            to: contractAddress,
+            data,
+            nonce: Number(nonce),
+            gas,
+            gasPrice: DEFAULT_GAS_PRICE,
+          });
+        }
+      })();
       const shredClient = createPublicShredClient({
         chain: riseTestnet,
         transport: webSocket(rpcUrl),

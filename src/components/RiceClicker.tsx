@@ -10,6 +10,7 @@ import {
   webSocket,
   createWalletClient,
   createPublicClient,
+  http,
 } from "viem";
 import { riseTestnet } from "viem/chains";
 import { createPublicShredClient, sendRawTransactionSync } from "shreds/viem";
@@ -58,6 +59,20 @@ export default function RiceClicker() {
       }),
     [wsUrl]
   );
+
+  const httpUrl = React.useMemo(() => {
+    try {
+      if (wsUrl.startsWith("wss://")) {
+        return wsUrl.replace(/^wss:\/\//, "https://").replace(/\/ws$/, "");
+      }
+      if (wsUrl.startsWith("ws://")) {
+        return wsUrl.replace(/^ws:\/\//, "http://").replace(/\/ws$/, "");
+      }
+      return wsUrl.replace(/\/ws$/, "");
+    } catch {
+      return wsUrl;
+    }
+  }, [wsUrl]);
 
   // Simple nonce manager for the embedded key path
   const embeddedNextNonceRef = React.useRef<bigint | null>(null);
@@ -194,9 +209,35 @@ export default function RiceClicker() {
         chain: riseTestnet,
         transport: webSocket(rpc),
       });
-      await sendRawTransactionSync(shredClient, {
-        serializedTransaction: serialized,
-      });
+      try {
+        await sendRawTransactionSync(shredClient, {
+          serializedTransaction: serialized,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
+        const looksLikeParamsError =
+          msg.includes("missing or invalid parameters") ||
+          msg.includes("invalid params") ||
+          msg.includes("missing params");
+        if (looksLikeParamsError) {
+          try {
+            const shredHttp = createPublicShredClient({
+              chain: riseTestnet,
+              transport: http(httpUrl),
+            });
+            await sendRawTransactionSync(shredHttp, {
+              serializedTransaction: serialized,
+            });
+          } catch {
+            const hash = await publicClient.sendRawTransaction({
+              serializedTransaction: serialized,
+            });
+            await publicClient.waitForTransactionReceipt({ hash });
+          }
+        } else {
+          throw e;
+        }
+      }
 
       queryClient.invalidateQueries({ queryKey: ["global-clicks"] });
       queryClient.invalidateQueries({ queryKey: ["global-clicks-onchain"] });

@@ -86,7 +86,7 @@ export default function RaceLobbyControls({
           placeholder="Your name"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          disabled={!!meIn || (lobby && lobby.status !== "waiting")}
+          disabled={!!meIn && lobby?.status === "waiting"}
         />
       </div>
       <div className="hud-pill">
@@ -95,7 +95,7 @@ export default function RaceLobbyControls({
           className="w-8 h-8 rounded-md border border-black/10"
           value={color}
           onChange={(e) => onColorChange(e.target.value)}
-          disabled={!!meIn || (lobby && lobby.status !== "waiting")}
+          disabled={!!meIn && lobby?.status === "waiting"}
           title="Saddle color"
         />
       </div>

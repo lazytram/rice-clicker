@@ -1,8 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { createPublicClient, webSocket } from "viem";
-import { riseTestnet } from "viem/chains";
+import { getSharedRisePublicClient } from "@/lib/embedded";
 import { ClickCounterAbi } from "@/abi/ClickCounter";
 
 const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CLICK_COUNTER_ADDRESS ||
@@ -12,12 +11,7 @@ export function useGlobalClicks() {
   return useQuery<number>({
     queryKey: ["global-clicks-onchain"],
     queryFn: async () => {
-      const wsUrl =
-        process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws";
-      const client = createPublicClient({
-        chain: riseTestnet,
-        transport: webSocket(wsUrl),
-      });
+      const client = getSharedRisePublicClient();
       const total = (await client.readContract({
         address: CONTRACT_ADDRESS,
         abi: ClickCounterAbi,

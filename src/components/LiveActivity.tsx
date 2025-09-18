@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { createPublicClient, http, webSocket } from "viem";
-import { riseTestnet } from "viem/chains";
+import { getSharedRisePublicClient } from "@/lib/embedded";
 import { ClickCounterAbi } from "@/abi/ClickCounter";
 
 type LiveEvent = {
@@ -18,12 +17,25 @@ type LiveEvent = {
 const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CLICK_COUNTER_ADDRESS ||
   "0x0000000000000000000000000000000000000000") as `0x${string}`;
 
+function isSocketClosedError(err: unknown): boolean {
+  if (typeof err === "object" && err !== null) {
+    const maybe = err as { name?: unknown; message?: unknown };
+    const name = typeof maybe.name === "string" ? maybe.name : "";
+    const msg = typeof maybe.message === "string" ? maybe.message : "";
+    return (
+      name === "SocketClosedError" ||
+      msg.toLowerCase().includes("socket has been closed")
+    );
+  }
+  return false;
+}
+
 export default function LiveActivity() {
   const [uniqueActive, setUniqueActive] = React.useState<number>(0);
   const [events, setEvents] = React.useState<LiveEvent[]>([]);
   const [compact, setCompact] = React.useState<boolean>(false);
   const wsClientRef = React.useRef<ReturnType<
-    typeof createPublicClient
+    typeof getSharedRisePublicClient
   > | null>(null);
   const timers = React.useRef<number[]>([]);
   const lastSeenRef = React.useRef<Map<`0x${string}`, number>>(new Map());
@@ -32,13 +44,7 @@ export default function LiveActivity() {
   const RETAIN_MS = 2000; // how long to keep items in the visual list
 
   React.useEffect(() => {
-    // Create a WebSocket-enabled public client (Shreds enhances real-time)
-    const wsUrl =
-      process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws";
-    const client = createPublicClient({
-      chain: riseTestnet,
-      transport: typeof window !== "undefined" ? webSocket(wsUrl) : http(),
-    });
+    const client = getSharedRisePublicClient();
     wsClientRef.current = client;
 
     const unwatch = client.watchContractEvent({
@@ -80,6 +86,7 @@ export default function LiveActivity() {
         setUniqueActive(count);
       },
       onError(error) {
+        if (isSocketClosedError(error)) return;
         console.error("LiveActivity watchContractEvent error", error);
       },
     });
