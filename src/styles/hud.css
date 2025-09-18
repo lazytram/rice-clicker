@@ -174,13 +174,22 @@
 
 @media (max-width: 768px) {
   .hud { gap: 8px; padding: 5px 10px; }
-  .topbar-inner { padding: 6px 8px; gap: 8px; }
+  .topbar-inner { padding: 6px 8px; gap: 8px; flex-wrap: wrap; justify-content: center; }
 }
 
 @media (max-width: 480px) {
   .hud { padding: 4px 8px; }
   .topbar { top: calc(env(safe-area-inset-top, 0px) + 8px); }
-  .inline-hud span:nth-child(2) { display: none; }
+  /* Hide the "Global:" label on very small screens to free space */
+  .inline-hud > span:first-child { display: none; }
+  /* Keep the numeric value, hide the emoji to save space */
+  .inline-hud .metric-emoji { display: none; }
+}
+
+/* Race lobby controls: make right-side toggle inline on small screens */
+@media (max-width: 700px) {
+  .has-right-toggle { padding-right: 0; }
+  .fixed-right { position: static; right: auto; top: auto; transform: none; margin-left: auto; }
 }
 
 /* Small-height screens (e.g., landscape phones) */

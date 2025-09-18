@@ -124,7 +124,7 @@ export default function WalletConnect({
           </button>
           <AnimatePresence>
             {menuOpen && (
-              <div className="absolute left-0 top-[calc(100%+8px)] w-[320px] z-[9999]">
+              <div className="absolute left-0 top-[calc(100%+8px)] w-[320px] z-[9999] rk-menu-container">
                 <motion.div
                   role="menu"
                   initial={{ opacity: 0, scale: 0.98, y: -6 }}
@@ -134,6 +134,7 @@ export default function WalletConnect({
                   className="rounded-[12px] border border-black/10 bg-white/95 backdrop-blur-md shadow-xl overflow-visible"
                 >
                   <div
+                    className="rk-caret"
                     style={{
                       position: "absolute",
                       width: 12,

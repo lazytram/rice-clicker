@@ -57,6 +57,18 @@
   .rk-badge { display: none; }
 }
 
+/* Very small screens: keep the Embedded pill compact */
+@media (max-width: 480px) {
+  /* Hide the short address inside the button to save space */
+  .rk-btn .font-mono { display: none; }
+  /* Optional: hide the dropdown caret */
+  .rk-btn span[aria-hidden="true"] { display: none; }
+  /* Ensure dropdown stays within viewport */
+  .rk-menu-container { left: auto !important; right: 0 !important; width: min(92vw, 320px) !important; }
+  .rk-menu { right: 0; max-width: 100%; }
+  .rk-caret { left: auto !important; right: 24px !important; }
+}
+
 /* Positioning for wallet dropdown menu */
 .rk-wrap { position: relative; }
 
