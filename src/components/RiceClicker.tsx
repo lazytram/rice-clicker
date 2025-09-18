@@ -7,7 +7,7 @@ import { Howl } from "howler";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   encodeFunctionData,
-  http,
+  webSocket,
   createWalletClient,
   createPublicClient,
 } from "viem";
@@ -19,18 +19,6 @@ import { formatFriendlyError, isInsufficientFunds } from "@/lib/errors";
 import FundModal from "@/components/FundModal";
 import { privateKeyToAccount } from "viem/accounts";
 import { useGlobalClicks } from "@/hooks/useGlobalClicks";
-
-const ariseSoundUrl = "/arise.mp3"; // optional placeholder; may not exist initially
-
-const ariseHowl =
-  typeof window !== "undefined"
-    ? new Howl({
-        src: [ariseSoundUrl],
-        volume: 0.5,
-        preload: false,
-        html5: true,
-      })
-    : null;
 
 export default function RiceClicker() {
   const [bubbleKey, setBubbleKey] = React.useState(0);
@@ -60,15 +48,15 @@ export default function RiceClicker() {
   const [fundOpen, setFundOpen] = React.useState(false);
 
   // Stable RPC URL (env or fallback)
-  const rpcUrl =
-    process.env.NEXT_PUBLIC_RISE_RPC_URL || "https://testnet.riselabs.xyz";
+  const wsUrl =
+    process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws";
   const publicClient = React.useMemo(
     () =>
       createPublicClient({
         chain: riseTestnet,
-        transport: http(rpcUrl),
+        transport: webSocket(wsUrl),
       }),
-    [rpcUrl]
+    [wsUrl]
   );
 
   // Simple nonce manager for the embedded key path
@@ -124,9 +112,6 @@ export default function RiceClicker() {
       scale: [1, 1.15, 1],
       transition: { duration: 0.25, ease: "easeOut" },
     });
-    try {
-      ariseHowl?.play();
-    } catch {}
 
     // Enforce embedded wallet usage
     try {
@@ -146,13 +131,13 @@ export default function RiceClicker() {
         ? (k as `0x${string}`)
         : (("0x" + k) as `0x${string}`);
       const account = privateKeyToAccount(pk);
-      const rpc = rpcUrl;
+      const rpc = wsUrl;
       const GAS_TIP = 1n;
       const DEFAULT_GAS_PRICE = 1n;
       const client = createWalletClient({
         account,
         chain: riseTestnet,
-        transport: http(rpc),
+        transport: webSocket(rpc),
       });
       const addressContract = (process.env.NEXT_PUBLIC_CLICK_COUNTER_ADDRESS ||
         "0x0000000000000000000000000000000000000000") as `0x${string}`;
@@ -207,7 +192,7 @@ export default function RiceClicker() {
       })();
       const shredClient = createPublicShredClient({
         chain: riseTestnet,
-        transport: http(rpc),
+        transport: webSocket(rpc),
       });
       await sendRawTransactionSync(shredClient, {
         serializedTransaction: serialized,

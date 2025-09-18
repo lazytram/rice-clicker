@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { createPublicClient, http, parseAbiItem } from "viem";
+import { createPublicClient, webSocket, parseAbiItem } from "viem";
 import { riseTestnet } from "viem/chains";
 import { RaceRegistryAbi } from "@/abi/RaceRegistry";
 
@@ -31,8 +31,8 @@ export function useRaceResults() {
   const [loading, setLoading] = React.useState(false);
   const [version, setVersion] = React.useState(0);
 
-  const rpcUrl =
-    process.env.NEXT_PUBLIC_RISE_RPC_URL || "https://testnet.riselabs.xyz";
+  const wsUrl =
+    process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws";
   const registryAddress = (process.env.NEXT_PUBLIC_RACE_REGISTRY_ADDRESS ||
     "0x0000000000000000000000000000000000000000") as Address;
 
@@ -40,9 +40,9 @@ export function useRaceResults() {
     () =>
       createPublicClient({
         chain: riseTestnet,
-        transport: http(rpcUrl),
+        transport: webSocket(wsUrl),
       }),
-    [rpcUrl]
+    [wsUrl]
   );
 
   React.useEffect(() => {

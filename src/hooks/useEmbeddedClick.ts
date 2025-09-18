@@ -3,7 +3,7 @@
 import React from "react";
 import {
   encodeFunctionData,
-  http,
+  webSocket,
   createWalletClient,
   createPublicClient,
 } from "viem";
@@ -57,11 +57,11 @@ export function useEmbeddedClick({
       const client = createWalletClient({
         account,
         chain: riseTestnet,
-        transport: http(rpcUrl),
+        transport: webSocket(rpcUrl),
       });
       const publicClient = createPublicClient({
         chain: riseTestnet,
-        transport: http(rpcUrl),
+        transport: webSocket(rpcUrl),
       });
       const contractAddress = (process.env.NEXT_PUBLIC_CLICK_COUNTER_ADDRESS ||
         "0x0000000000000000000000000000000000000000") as `0x${string}`;
@@ -71,43 +71,37 @@ export function useEmbeddedClick({
         functionName: "click",
         args: [],
       });
-      // Estimate gas via RPC using a public client
+      // Estimate gas and prefer legacy tx with ultra-low gasPrice (env override)
       const gasEstimated = await publicClient.estimateGas({
         account: account.address,
         to: contractAddress,
         data,
       });
-      const gas = (gasEstimated * BigInt(105)) / BigInt(100);
-      let serialized: `0x${string}`;
+      const gas = (gasEstimated * BigInt(101)) / BigInt(100);
+      const envPrice =
+        typeof process !== "undefined" && process.env.NEXT_PUBLIC_GAS_PRICE_WEI
+          ? BigInt(process.env.NEXT_PUBLIC_GAS_PRICE_WEI)
+          : BigInt(1);
+      const gasPrice = envPrice < BigInt(0) ? BigInt(0) : envPrice;
+
+      // Optional pre-check to avoid false "insufficient funds" popups
       try {
-        const block = await publicClient.getBlock({ blockTag: "pending" });
-        if (block.baseFeePerGas != null) {
-          const tip = BigInt(1);
-          const maxFeePerGas = block.baseFeePerGas + tip;
-          serialized = await client.signTransaction({
-            chain: riseTestnet,
-            account,
-            to: contractAddress,
-            data,
-            nonce: Number(nonce),
-            gas,
-            maxFeePerGas,
-            maxPriorityFeePerGas: tip,
+        const bal = await publicClient.getBalance({ address: account.address });
+        const required = gas * gasPrice;
+        if (bal < required) {
+          onInsufficientFunds?.();
+          show({
+            type: "error",
+            title: "Insufficient funds",
+            message: "Balance is lower than the minimal network fee.",
           });
-        } else {
-          const gasPrice = BigInt(1);
-          serialized = await client.signTransaction({
-            chain: riseTestnet,
-            account,
-            to: contractAddress,
-            data,
-            nonce: Number(nonce),
-            gas,
-            gasPrice,
-          });
+          return;
         }
-      } catch {
-        const gasPrice = BigInt(1);
+      } catch {}
+
+      let serialized: `0x${string}`;
+      // Force legacy (type-0) to avoid baseFee on EIP-1559 chains
+      try {
         serialized = await client.signTransaction({
           chain: riseTestnet,
           account,
@@ -117,10 +111,26 @@ export function useEmbeddedClick({
           gas,
           gasPrice,
         });
+      } catch {
+        // Fallback to EIP-1559 with 1 wei priority fee
+        const block = await publicClient.getBlock({ blockTag: "pending" });
+        const tip = BigInt(1);
+        const base = block.baseFeePerGas ?? BigInt(0);
+        const maxFeePerGas = base + tip;
+        serialized = await client.signTransaction({
+          chain: riseTestnet,
+          account,
+          to: contractAddress,
+          data,
+          nonce: Number(nonce),
+          gas,
+          maxFeePerGas,
+          maxPriorityFeePerGas: tip,
+        });
       }
       const shredClient = createPublicShredClient({
         chain: riseTestnet,
-        transport: http(rpcUrl),
+        transport: webSocket(rpcUrl),
       });
       await sendRawTransactionSync(shredClient, {
         serializedTransaction: serialized,

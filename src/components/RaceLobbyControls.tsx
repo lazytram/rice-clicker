@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useToast } from "@/components/Toast";
 import type { LobbyState } from "@/hooks/useRaceLobby";
 
 type Props = {
@@ -44,9 +45,38 @@ export default function RaceLobbyControls({
   onJoin,
   onLeave,
 }: Props) {
+  const { show } = useToast();
+  const [copyMode, setCopyMode] = React.useState<"id" | "link">("id");
+
+  const getShareValue = React.useCallback(() => {
+    if (!lobbyId) return "";
+    if (copyMode === "id") return lobbyId;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("mode", "race");
+      url.searchParams.set("lobby", lobbyId);
+      return url.toString();
+    } catch {
+      return lobbyId;
+    }
+  }, [copyMode, lobbyId]);
+
+  const handleCopy = React.useCallback(async () => {
+    const value = getShareValue();
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      show({
+        type: "success",
+        message: copyMode === "id" ? "Lobby ID copied" : "Lobby link copied",
+      });
+    } catch {
+      show({ type: "error", message: "Unable to copy to clipboard" });
+    }
+  }, [getShareValue, show, copyMode]);
   return (
     <div
-      className={`flex flex-wrap items-center gap-3 text-slate-900${
+      className={`flex flex-wrap items-center gap-2 sm:gap-3 text-slate-900${
         !lobbyId ? " relative has-right-toggle" : ""
       }`}
     >
@@ -69,6 +99,18 @@ export default function RaceLobbyControls({
           title="Saddle color"
         />
       </div>
+      {!!lobbyId && !!lobby && (
+        <>
+          <div className="hud-pill text-sm">
+            <span className="opacity-70">Players</span>
+            <span className="hud-badge">{lobby.players.length}</span>
+          </div>
+          <div className="hud-pill text-sm">
+            <span className="opacity-70">Capacity</span>
+            <span className="hud-badge">{lobby.capacity}</span>
+          </div>
+        </>
+      )}
       {!lobbyId ? (
         <>
           {flow === "create" ? (
@@ -100,7 +142,12 @@ export default function RaceLobbyControls({
             </>
           ) : (
             <>
-              <button onClick={onJoinAnyRace} className="rk-btn primary">
+              <button
+                onClick={onJoinAnyRace}
+                className="rk-btn primary"
+                disabled={!name.trim()}
+                title={!name.trim() ? "Enter your name first" : undefined}
+              >
                 Join any
               </button>
               <div className="hud-pill">
@@ -111,12 +158,17 @@ export default function RaceLobbyControls({
                   onChange={(e) => onJoinLobbyIdInputChange(e.target.value)}
                 />
               </div>
-              <button onClick={onJoinById} className="rk-btn">
+              <button
+                onClick={onJoinById}
+                className="rk-btn"
+                disabled={!name.trim() || !joinLobbyIdInput.trim()}
+                title={!name.trim() ? "Enter your name first" : undefined}
+              >
                 Join by ID
               </button>
             </>
           )}
-          <div className="seg-toggle fixed-right">
+          <div className="seg-toggle compact fixed-right">
             <button
               className={flow === "create" ? "active" : ""}
               onClick={() => onFlowChange("create")}
@@ -132,15 +184,35 @@ export default function RaceLobbyControls({
           </div>
         </>
       ) : (
-        <div className="hud-pill text-sm">
-          <span className="opacity-70">Lobby ID</span>
-          <span className="hud-badge" style={{ userSelect: "text" }}>
-            {lobbyId}
-          </span>
-          <button
-            className="rk-btn"
-            onClick={() => lobbyId && navigator.clipboard.writeText(lobbyId)}
+        <div className="hud-pill text-sm lobby-pill w-full">
+          <span className="opacity-70">Lobby</span>
+          <span
+            className="hud-badge lobby-badge-fixed"
+            style={{
+              userSelect: "text",
+            }}
+            title={getShareValue()}
+            onClick={handleCopy}
           >
+            {copyMode === "id" ? lobbyId : getShareValue()}
+          </span>
+          <div className="seg-toggle compact">
+            <button
+              className={copyMode === "id" ? "active" : ""}
+              onClick={() => setCopyMode("id")}
+              title="Show ID (for manual entry)"
+            >
+              ID
+            </button>
+            <button
+              className={copyMode === "link" ? "active" : ""}
+              onClick={() => setCopyMode("link")}
+              title="Show full link (for sharing)"
+            >
+              Link
+            </button>
+          </div>
+          <button className="rk-btn sm ghost" onClick={handleCopy}>
             Copy
           </button>
         </div>
@@ -150,8 +222,9 @@ export default function RaceLobbyControls({
         (!meIn ? (
           <button
             onClick={onJoin}
-            disabled={!lobby || lobby.status !== "waiting"}
+            disabled={!lobby || lobby.status !== "waiting" || !name.trim()}
             className="rk-btn primary disabled:opacity-50"
+            title={!name.trim() ? "Enter your name first" : undefined}
           >
             Join
           </button>
@@ -159,30 +232,11 @@ export default function RaceLobbyControls({
           <button
             onClick={onLeave}
             disabled={!lobby || lobby.status !== "waiting"}
-            className="rk-btn"
-            style={{
-              background: "#fecaca",
-              border: "1px solid rgba(0,0,0,0.06)",
-              color: "#7f1d1d",
-              fontWeight: 800,
-            }}
+            className="rk-btn danger"
           >
             Leave
           </button>
         ))}
-      <div className="grow" />
-      {!!lobby && (
-        <>
-          <div className="hud-pill text-sm">
-            <span className="opacity-70">Players</span>
-            <span className="hud-badge">{lobby.players.length}</span>
-          </div>
-          <div className="hud-pill text-sm">
-            <span className="opacity-70">Capacity</span>
-            <span className="hud-badge">{lobby.capacity}</span>
-          </div>
-        </>
-      )}
     </div>
   );
 }

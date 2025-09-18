@@ -2,7 +2,7 @@
 
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, createConfig, http, createStorage } from "wagmi";
+import { WagmiProvider, createConfig, webSocket, createStorage } from "wagmi";
 import { riseTestnet } from "viem/chains";
 import { ToastProvider } from "@/components/Toast";
 
@@ -17,10 +17,8 @@ const storage =
 export const wagmiConfig = createConfig({
   chains: [riseTestnet],
   transports: {
-    [riseTestnet.id]: http(
-      process.env.NEXT_PUBLIC_RISE_RPC_URL ||
-        "https://rise-testnet-porto.fly.dev",
-      { batch: true, retryCount: 3, retryDelay: 1000 }
+    [riseTestnet.id]: webSocket(
+      process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws"
     ),
   },
   ssr: true,

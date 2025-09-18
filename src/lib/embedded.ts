@@ -1,4 +1,4 @@
-import { createPublicClient, http } from "viem";
+import { createPublicClient, webSocket } from "viem";
 import { riseTestnet } from "viem/chains";
 
 export type EmbeddedInfo = {
@@ -9,9 +9,9 @@ export type EmbeddedInfo = {
 export function createRisePublicClient(rpcUrl?: string) {
   const url =
     rpcUrl ||
-    process.env.NEXT_PUBLIC_RISE_RPC_URL ||
-    "https://testnet.riselabs.xyz";
-  return createPublicClient({ chain: riseTestnet, transport: http(url) });
+    process.env.NEXT_PUBLIC_RISE_WS_URL ||
+    "wss://testnet.riselabs.xyz/ws";
+  return createPublicClient({ chain: riseTestnet, transport: webSocket(url) });
 }
 
 export async function loadEmbeddedInfo(

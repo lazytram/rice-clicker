@@ -33,9 +33,11 @@ export default function LiveActivity() {
 
   React.useEffect(() => {
     // Create a WebSocket-enabled public client (Shreds enhances real-time)
+    const wsUrl =
+      process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws";
     const client = createPublicClient({
       chain: riseTestnet,
-      transport: typeof window !== "undefined" ? webSocket() : http(),
+      transport: typeof window !== "undefined" ? webSocket(wsUrl) : http(),
     });
     wsClientRef.current = client;
 

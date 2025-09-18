@@ -172,9 +172,24 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+/* Keep lobby display width stable between ID/Link modes */
+.lobby-badge-fixed {
+  width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Compact segmented toggle for tight spaces */
+.seg-toggle.compact { padding: 3px; }
+.seg-toggle.compact button { padding: 6px 10px; }
+
 @media (max-width: 768px) {
   .hud { gap: 8px; padding: 5px 10px; }
   .topbar-inner { padding: 6px 8px; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .seg-toggle button { padding: 7px 10px; }
+  .hud-pill { padding: 5px 8px; }
+  .lobby-badge-fixed { width: 260px; }
 }
 
 @media (max-width: 480px) {
@@ -184,12 +199,44 @@
   .inline-hud > span:first-child { display: none; }
   /* Keep the numeric value, hide the emoji to save space */
   .inline-hud .metric-emoji { display: none; }
+  .lobby-pill { flex-wrap: wrap; }
+  .lobby-badge-fixed { width: 100%; flex: 1 1 100%; display: inline-block; }
+  .seg-toggle button { padding: 6px 8px; }
 }
 
 /* Race lobby controls: make right-side toggle inline on small screens */
 @media (max-width: 700px) {
   .has-right-toggle { padding-right: 0; }
   .fixed-right { position: static; right: auto; top: auto; transform: none; margin-left: auto; }
+}
+
+/* Lobby pill layout improvements for mobile */
+.lobby-pill {
+  align-items: center;
+  border-radius: 14px;
+  padding: 10px 12px;
+  gap: 8px;
+}
+.lobby-pill > span.opacity-70 { align-self: center; }
+.lobby-pill .lobby-badge-fixed { max-width: 100%; width: auto; min-width: 220px; flex: 1 1 360px; }
+.lobby-pill .seg-toggle { margin-left: 6px; }
+.lobby-pill .rk-btn { margin-left: 6px; align-self: center; }
+
+@media (max-width: 1024px) {
+  .lobby-pill {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      "label label label"
+      "value value value"
+      "mode copy copy";
+    row-gap: 8px;
+    column-gap: 8px;
+  }
+  .lobby-pill > span.opacity-70 { grid-area: label; align-self: center; }
+  .lobby-pill .lobby-badge-fixed { grid-area: value; width: 100%; }
+  .lobby-pill .seg-toggle { grid-area: mode; justify-self: start; }
+  .lobby-pill .rk-btn { grid-area: copy; justify-self: end; }
 }
 
 /* Small-height screens (e.g., landscape phones) */

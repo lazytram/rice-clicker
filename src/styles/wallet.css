@@ -5,6 +5,19 @@
   box-shadow: 0 10px 24px rgba(0,0,0,0.12);
   transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
 }
+.rk-btn.sm { padding: 6px 10px; font-size: 13px; box-shadow: 0 8px 18px rgba(0,0,0,0.1); }
+.rk-btn.ghost {
+  color: #0f172a;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.rk-btn.ghost:hover { filter: saturate(1.02); transform: translateY(-1px); }
+.rk-btn.danger {
+  color: #7f1d1d;
+  background: #fecaca;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.rk-btn.danger:hover { filter: brightness(0.98); transform: translateY(-1px); }
 .rk-btn.primary {
   color: #0b1b14;
   background-image: linear-gradient(90deg, #22c55e, #10b981 50%, #06b6d4);

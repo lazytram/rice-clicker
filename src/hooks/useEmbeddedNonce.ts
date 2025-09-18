@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { createPublicClient, http } from "viem";
+import { createPublicClient, webSocket } from "viem";
 import { riseTestnet } from "viem/chains";
 
 export function useEmbeddedNonce(rpcUrl: string) {
@@ -9,7 +9,7 @@ export function useEmbeddedNonce(rpcUrl: string) {
     () =>
       createPublicClient({
         chain: riseTestnet,
-        transport: http(rpcUrl),
+        transport: webSocket(rpcUrl),
       }),
     [rpcUrl]
   );

@@ -10,7 +10,12 @@ export function parseMode(raw: string | null): GameMode | null {
 export function getModeFromUrl(): GameMode | null {
   try {
     const params = new URLSearchParams(window.location.search);
-    return parseMode(params.get("mode"));
+    const explicit = parseMode(params.get("mode"));
+    if (explicit) return explicit;
+    // If a lobby id is present in the URL, force race mode
+    const hasLobby = !!params.get("lobby");
+    if (hasLobby) return "race";
+    return null;
   } catch {
     return null;
   }

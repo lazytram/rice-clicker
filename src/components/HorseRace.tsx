@@ -31,6 +31,34 @@ export default function HorseRace() {
   const [fundOpen, setFundOpen] = React.useState(false);
   const { show } = useToast();
 
+  // Initialize from URL (?lobby=ID)
+  React.useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("lobby");
+      if (fromUrl) {
+        setLobbyId(fromUrl);
+        setJoinLobbyIdInput(fromUrl);
+        setFlow("join");
+      }
+    } catch {}
+  }, []);
+
+  // Keep URL in sync with current lobby id
+  React.useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (lobbyId) {
+        url.searchParams.set("lobby", lobbyId);
+        // ensure race mode for shared links
+        url.searchParams.set("mode", "race");
+      } else {
+        url.searchParams.delete("lobby");
+      }
+      window.history.replaceState({}, "", url.toString());
+    } catch {}
+  }, [lobbyId]);
+
   React.useEffect(() => {
     try {
       const k =
@@ -49,7 +77,7 @@ export default function HorseRace() {
   }, []);
 
   const rpcUrl =
-    process.env.NEXT_PUBLIC_RISE_RPC_URL || "https://testnet.riselabs.xyz";
+    process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws";
 
   const { getNextEmbeddedNonce, resetEmbeddedNonce } = useEmbeddedNonce(rpcUrl);
 
@@ -76,7 +104,7 @@ export default function HorseRace() {
     const next = await create({
       capacity: Math.max(2, Math.min(10, capacity || 5)),
       address,
-      name: name || `Player ${address.slice(2, 6)}`,
+      name,
       color,
     });
     setLobbyId(next.id);
@@ -84,9 +112,17 @@ export default function HorseRace() {
 
   const onJoinAnyRace = async () => {
     if (!address) return;
+    if (!name.trim()) {
+      show({
+        type: "info",
+        title: "Name required",
+        message: "Please enter your name before joining a race.",
+      });
+      return;
+    }
     const next = await joinAny({
       address,
-      name: name || `Player ${address.slice(2, 6)}`,
+      name,
       color,
     });
     setLobbyId(next.id);
@@ -94,10 +130,18 @@ export default function HorseRace() {
 
   const onJoinById = async () => {
     if (!address || !joinLobbyIdInput) return;
+    if (!name.trim()) {
+      show({
+        type: "info",
+        title: "Name required",
+        message: "Please enter your name before joining a race.",
+      });
+      return;
+    }
     await join({
       lobbyId: joinLobbyIdInput,
       address,
-      name: name || `Player ${address.slice(2, 6)}`,
+      name,
       color,
     });
     setLobbyId(joinLobbyIdInput);
@@ -105,10 +149,18 @@ export default function HorseRace() {
 
   const onJoin = async () => {
     if (!address || !lobbyId) return;
+    if (!name.trim()) {
+      show({
+        type: "info",
+        title: "Name required",
+        message: "Please enter your name before joining a race.",
+      });
+      return;
+    }
     await join({
       lobbyId,
       address,
-      name: name || `Player ${address.slice(2, 6)}`,
+      name,
       color,
     });
   };
@@ -137,10 +189,18 @@ export default function HorseRace() {
   const onNewRace = async () => {
     try {
       if (!address) return;
+      if (!name.trim()) {
+        show({
+          type: "info",
+          title: "Name required",
+          message: "Please enter your name before creating a race.",
+        });
+        return;
+      }
       const next = await create({
         capacity: Math.max(2, Math.min(10, lobby?.capacity || 5)),
         address,
-        name: name || `Player ${address.slice(2, 6)}`,
+        name,
         color,
       });
       setLobbyId(next.id);
