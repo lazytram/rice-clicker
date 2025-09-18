@@ -2,7 +2,7 @@
 
 import React from "react";
 import { createPublicClient, http, parseAbiItem } from "viem";
-import { riseTestnet } from "rise-wallet";
+import { riseTestnet } from "viem/chains";
 import { RaceRegistryAbi } from "@/abi/RaceRegistry";
 
 export type Address = `0x${string}`;
@@ -32,8 +32,7 @@ export function useRaceResults() {
   const [version, setVersion] = React.useState(0);
 
   const rpcUrl =
-    process.env.NEXT_PUBLIC_RISE_RPC_URL ||
-    "https://rise-testnet-porto.fly.dev";
+    process.env.NEXT_PUBLIC_RISE_RPC_URL || "https://testnet.riselabs.xyz";
   const registryAddress = (process.env.NEXT_PUBLIC_RACE_REGISTRY_ADDRESS ||
     "0x0000000000000000000000000000000000000000") as Address;
 

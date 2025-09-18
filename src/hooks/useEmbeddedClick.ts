@@ -7,7 +7,7 @@ import {
   createWalletClient,
   createPublicClient,
 } from "viem";
-import { riseTestnet } from "rise-wallet";
+import { riseTestnet } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { ClickCounterAbi } from "@/abi/ClickCounter";
 import { createPublicShredClient, sendRawTransactionSync } from "shreds/viem";

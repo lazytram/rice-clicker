@@ -3,8 +3,7 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig, http, createStorage } from "wagmi";
-import { porto } from "porto/wagmi";
-import { riseTestnet, riseTestnetConfig } from "rise-wallet";
+import { riseTestnet } from "viem/chains";
 import { ToastProvider } from "@/components/Toast";
 
 // Web storage per Porto starter (localStorage)
@@ -27,9 +26,7 @@ export const wagmiConfig = createConfig({
   ssr: true,
   storage,
   multiInjectedProviderDiscovery: false,
-  connectors: [
-    porto({ relay: riseTestnetConfig.relay, mode: riseTestnetConfig.mode }),
-  ],
+  connectors: [],
 });
 
 type ProvidersProps = { children: React.ReactNode };

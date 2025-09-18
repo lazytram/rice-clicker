@@ -18,7 +18,16 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      ".hardhat/**",
+      "artifacts/**",
+      "cache/**",
     ],
+  },
+  {
+    files: ["deploy.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
   },
 ];
 

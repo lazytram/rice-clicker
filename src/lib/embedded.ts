@@ -1,5 +1,5 @@
 import { createPublicClient, http } from "viem";
-import { riseTestnet } from "rise-wallet";
+import { riseTestnet } from "viem/chains";
 
 export type EmbeddedInfo = {
   address: `0x${string}` | null;
@@ -10,7 +10,7 @@ export function createRisePublicClient(rpcUrl?: string) {
   const url =
     rpcUrl ||
     process.env.NEXT_PUBLIC_RISE_RPC_URL ||
-    "https://rise-testnet-porto.fly.dev";
+    "https://testnet.riselabs.xyz";
   return createPublicClient({ chain: riseTestnet, transport: http(url) });
 }
 

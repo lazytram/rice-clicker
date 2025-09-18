@@ -32,13 +32,11 @@ export default function RaceTrack({
     laneHeight,
     padY,
     startLineLeft,
-    horseNoseOffset,
     baseOffset,
     horseSize,
     shadowWidth,
     shadowHeight,
     shadowTranslateY,
-    innerPadRight,
     trackLenPx,
     markLeftPx,
     containerRef,
@@ -50,11 +48,10 @@ export default function RaceTrack({
 
   const marks = React.useMemo(() => {
     if (!threshold || threshold <= 0) return [] as number[];
-    const step = 50;
-    const count = Math.floor(threshold / step);
-    return Array.from({ length: count }, (_, i) => step * (i + 1)).filter(
-      (m) => m < threshold
-    );
+    const step = Math.max(25, Math.round(threshold / 20));
+    const list: number[] = [];
+    for (let m = step; m < threshold; m += step) list.push(m);
+    return list;
   }, [threshold]);
 
   return (

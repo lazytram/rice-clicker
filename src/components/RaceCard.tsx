@@ -131,19 +131,13 @@ export default function RaceCard({ race: r, identities, onSaved }: Props) {
         {r.winnerGameUri && (
           <div className="text-xs text-slate-600 break-all">
             Saved URI: {r.winnerGameUri}
-            <UriActions
-              uri={r.winnerGameUri}
-              storageKey={`saved-${r.id.toString()}`}
-            />
+            <UriActions uri={r.winnerGameUri} />
           </div>
         )}
         {!r.winnerGameUri && r.pendingWinnerGameUri && (
           <div className="text-xs text-slate-500 break-all">
             Pending: {r.pendingWinnerGameUri}
-            <UriActions
-              uri={r.pendingWinnerGameUri}
-              storageKey={`pending-${r.id.toString()}`}
-            />
+            <UriActions uri={r.pendingWinnerGameUri} />
           </div>
         )}
         {!r.winnerGameUri && isWinner && (

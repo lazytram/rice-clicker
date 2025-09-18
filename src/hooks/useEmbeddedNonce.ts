@@ -2,7 +2,7 @@
 
 import React from "react";
 import { createPublicClient, http } from "viem";
-import { riseTestnet } from "rise-wallet";
+import { riseTestnet } from "viem/chains";
 
 export function useEmbeddedNonce(rpcUrl: string) {
   const publicClient = React.useMemo(
@@ -47,4 +47,3 @@ export function useEmbeddedNonce(rpcUrl: string) {
 
   return { getNextEmbeddedNonce, resetEmbeddedNonce } as const;
 }
-

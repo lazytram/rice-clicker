@@ -11,13 +11,12 @@ import {
   createWalletClient,
   createPublicClient,
 } from "viem";
-import { riseTestnet } from "rise-wallet";
+import { riseTestnet } from "viem/chains";
 import { createPublicShredClient, sendRawTransactionSync } from "shreds/viem";
 import { ClickCounterAbi } from "@/abi/ClickCounter";
 import { useToast } from "@/components/Toast";
 import { formatFriendlyError, isInsufficientFunds } from "@/lib/errors";
 import FundModal from "@/components/FundModal";
-import { useWalletClient, useSwitchChain, useConfig } from "wagmi";
 import { privateKeyToAccount } from "viem/accounts";
 import { useGlobalClicks } from "@/hooks/useGlobalClicks";
 
@@ -58,15 +57,11 @@ export default function RiceClicker() {
   const controls = useAnimationControls();
   const queryClient = useQueryClient();
   const { show } = useToast();
-  const { data: walletClient } = useWalletClient();
-  const { switchChainAsync } = useSwitchChain();
-  const wagmiConfig = useConfig();
   const [fundOpen, setFundOpen] = React.useState(false);
 
   // Stable RPC URL (env or fallback)
   const rpcUrl =
-    process.env.NEXT_PUBLIC_RISE_RPC_URL ||
-    "https://rise-testnet-porto.fly.dev";
+    process.env.NEXT_PUBLIC_RISE_RPC_URL || "https://testnet.riselabs.xyz";
   const publicClient = React.useMemo(
     () =>
       createPublicClient({
@@ -81,7 +76,7 @@ export default function RiceClicker() {
   const embeddedNonceChainRef = React.useRef<Promise<void>>(Promise.resolve());
   const getNextEmbeddedNonce = React.useCallback(
     async (address: `0x${string}`) => {
-      const assign = async () => {
+      const assignNext = async () => {
         if (embeddedNextNonceRef.current === null) {
           const remote = await publicClient.getTransactionCount({
             address,
@@ -90,16 +85,15 @@ export default function RiceClicker() {
           embeddedNextNonceRef.current = BigInt(remote);
         }
         const current = embeddedNextNonceRef.current!;
-        embeddedNextNonceRef.current = current + BigInt(1);
+        embeddedNextNonceRef.current = current + 1n;
         return current;
       };
-      const p = embeddedNonceChainRef.current.then(assign, assign);
-      // advance the chain without blocking caller beyond nonce assign
-      embeddedNonceChainRef.current = p.then(
+      const next = embeddedNonceChainRef.current.then(assignNext, assignNext);
+      embeddedNonceChainRef.current = next.then(
         () => undefined,
         () => undefined
       );
-      return p;
+      return next;
     },
     [publicClient]
   );
@@ -153,6 +147,8 @@ export default function RiceClicker() {
         : (("0x" + k) as `0x${string}`);
       const account = privateKeyToAccount(pk);
       const rpc = rpcUrl;
+      const GAS_TIP = 1n;
+      const DEFAULT_GAS_PRICE = 1n;
       const client = createWalletClient({
         account,
         chain: riseTestnet,
@@ -172,46 +168,43 @@ export default function RiceClicker() {
         data,
       });
       const gas = (gasEstimated * BigInt(105)) / BigInt(100);
-      let serialized: `0x${string}`;
-      try {
-        const block = await publicClient.getBlock({ blockTag: "pending" });
-        if (block.baseFeePerGas != null) {
-          const tip = BigInt(1);
-          const maxFeePerGas = block.baseFeePerGas + tip;
-          serialized = await client.signTransaction({
+      const serialized: `0x${string}` = await (async () => {
+        try {
+          const block = await publicClient.getBlock({ blockTag: "pending" });
+          if (block.baseFeePerGas != null) {
+            const maxFeePerGas = block.baseFeePerGas + GAS_TIP;
+            return client.signTransaction({
+              chain: riseTestnet,
+              account,
+              to: addressContract,
+              data,
+              nonce: Number(nonce),
+              gas,
+              maxFeePerGas,
+              maxPriorityFeePerGas: GAS_TIP,
+            });
+          }
+          return client.signTransaction({
             chain: riseTestnet,
             account,
             to: addressContract,
             data,
             nonce: Number(nonce),
             gas,
-            maxFeePerGas,
-            maxPriorityFeePerGas: tip,
+            gasPrice: DEFAULT_GAS_PRICE,
           });
-        } else {
-          const gasPrice = BigInt(1);
-          serialized = await client.signTransaction({
+        } catch {
+          return client.signTransaction({
             chain: riseTestnet,
             account,
             to: addressContract,
             data,
             nonce: Number(nonce),
             gas,
-            gasPrice,
+            gasPrice: DEFAULT_GAS_PRICE,
           });
         }
-      } catch {
-        const gasPrice = BigInt(1);
-        serialized = await client.signTransaction({
-          chain: riseTestnet,
-          account,
-          to: addressContract,
-          data,
-          nonce: Number(nonce),
-          gas,
-          gasPrice,
-        });
-      }
+      })();
       const shredClient = createPublicShredClient({
         chain: riseTestnet,
         transport: http(rpc),

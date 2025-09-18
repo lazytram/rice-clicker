@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { useAccount } from "wagmi";
 import FundModal from "@/components/FundModal";
 import { useToast } from "@/components/Toast";
 import {} from "viem";
@@ -16,9 +15,10 @@ import Podium from "@/components/Podium";
 import { useEmbeddedNonce } from "@/hooks/useEmbeddedNonce";
 import { useEmbeddedClick } from "@/hooks/useEmbeddedClick";
 import { usePodiumExport } from "@/hooks/usePodiumExport";
+import { privateKeyToAccount } from "viem/accounts";
 
 export default function HorseRace() {
-  const { address } = useAccount();
+  const [address, setAddress] = React.useState<string | null>(null);
   const [lobbyId, setLobbyId] = React.useState<string | null>(null);
   const { lobby, create, joinAny, join, leave, advance } = useRaceLobby(
     lobbyId || undefined
@@ -31,9 +31,25 @@ export default function HorseRace() {
   const [fundOpen, setFundOpen] = React.useState(false);
   const { show } = useToast();
 
+  React.useEffect(() => {
+    try {
+      const k =
+        typeof window !== "undefined"
+          ? localStorage.getItem("embedded_privkey")
+          : null;
+      if (!k) return setAddress(null);
+      const pk = k.startsWith("0x")
+        ? (k as `0x${string}`)
+        : (("0x" + k) as `0x${string}`);
+      const acct = privateKeyToAccount(pk);
+      setAddress(acct.address);
+    } catch {
+      setAddress(null);
+    }
+  }, []);
+
   const rpcUrl =
-    process.env.NEXT_PUBLIC_RISE_RPC_URL ||
-    "https://rise-testnet-porto.fly.dev";
+    process.env.NEXT_PUBLIC_RISE_RPC_URL || "https://testnet.riselabs.xyz";
 
   const { getNextEmbeddedNonce, resetEmbeddedNonce } = useEmbeddedNonce(rpcUrl);
 
