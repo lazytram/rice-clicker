@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, http } from "viem";
-import { riseTestnet } from "rise-wallet";
+import { riseTestnet } from "viem/chains";
 import { ClickCounterAbi } from "@/abi/ClickCounter";
 
 const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CLICK_COUNTER_ADDRESS ||
@@ -13,8 +13,7 @@ export function useGlobalClicks() {
     queryKey: ["global-clicks-onchain"],
     queryFn: async () => {
       const rpcUrl =
-        process.env.NEXT_PUBLIC_RISE_RPC_URL ||
-        "https://rise-testnet-porto.fly.dev";
+        process.env.NEXT_PUBLIC_RISE_RPC_URL || "https://testnet.riselabs.xyz";
       const client = createPublicClient({
         chain: riseTestnet,
         transport: http(rpcUrl),
@@ -31,4 +30,3 @@ export function useGlobalClicks() {
     refetchInterval: 3_000,
   });
 }
-

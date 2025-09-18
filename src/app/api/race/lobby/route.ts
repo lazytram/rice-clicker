@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { getActivePeerSet, upsertPresence } from "@/app/api/presence/state";
 import { DEFAULT_RACE_THRESHOLD } from "@/lib/constants";
 
 type Player = {
@@ -86,7 +85,7 @@ export async function POST(req: NextRequest) {
       return new Response("missing player", { status: 400 });
     const lobby = createLobby({ capacity, threshold });
     lobby.players.push({ address, name, color, clicks: 0 });
-    upsertPresence(address, name, color);
+
     return Response.json(lobby);
   }
 
@@ -106,7 +105,7 @@ export async function POST(req: NextRequest) {
       player.name = name;
       player.color = color;
     }
-    upsertPresence(address, name, color);
+
     if (
       target.players.length >= target.capacity &&
       target.status === "waiting"
@@ -137,7 +136,7 @@ export async function POST(req: NextRequest) {
       exists.name = name;
       exists.color = color;
     }
-    upsertPresence(address, name, color);
+
     if (lobby.players.length >= lobby.capacity && lobby.status === "waiting") {
       lobby.status = "countdown";
       lobby.countdownEndsAt = Date.now() + 3000;
@@ -162,13 +161,7 @@ export async function POST(req: NextRequest) {
       2,
       Math.min(Number(minPlayers) || 2, lobby.capacity)
     );
-    // prune disconnected players once
-    if (lobby.status === "waiting") {
-      const active = getActivePeerSet();
-      lobby.players = lobby.players.filter((p) =>
-        active.has(p.address.toLowerCase())
-      );
-    }
+
     if (lobby.players.length < required)
       return new Response("not enough players", { status: 400 });
     if (lobby.status !== "waiting")

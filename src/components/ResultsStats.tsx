@@ -57,7 +57,7 @@ export default function ResultsStats({ races, identities }: Props) {
         <div className="text-sm">
           <div className="text-slate-500 mb-1">Top winners</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {stats.top.map((t, i) => {
+            {stats.top.map((t) => {
               const id = identities[t.address as `0x${string}`];
               return (
                 <div

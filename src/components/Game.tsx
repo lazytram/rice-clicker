@@ -4,7 +4,6 @@ import React from "react";
 import Navbar from "./Navbar";
 import RiceClicker from "./RiceClicker";
 import HorseRace from "./HorseRace";
-import { useAccount } from "wagmi";
 import { createRisePublicClient, loadEmbeddedInfo } from "@/lib/embedded";
 import {
   getModeFromUrl,
@@ -13,7 +12,6 @@ import {
   type GameMode,
 } from "@/lib/gameMode";
 import FundModal from "@/components/FundModal";
-import { usePresence } from "@/hooks/usePresence";
 
 // using shared helpers from lib
 
@@ -21,8 +19,6 @@ export default function Game() {
   const [mode, setMode] = React.useState<GameMode>("clicker");
   const [embeddedAddr, setEmbeddedAddr] = React.useState<string | null>(null);
   const [fundOpen, setFundOpen] = React.useState(false);
-  const { address } = useAccount();
-  const { peers } = usePresence({ address });
   const [embeddedBalance, setEmbeddedBalance] = React.useState<bigint | null>(
     null
   );
@@ -72,7 +68,7 @@ export default function Game() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 gap-6 pt-24">
-      <Navbar mode={mode} onSelectMode={setMode} peersCount={peers.length} />
+      <Navbar mode={mode} onSelectMode={setMode} />
       {mode === "clicker" && <RiceClicker />}
       {mode === "race" && (
         <>

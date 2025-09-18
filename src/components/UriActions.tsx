@@ -4,10 +4,9 @@ import React from "react";
 
 type Props = {
   uri: string;
-  storageKey: string; // unique key for copy feedback
 };
 
-export default function UriActions({ uri, storageKey }: Props) {
+export default function UriActions({ uri }: Props) {
   const [copied, setCopied] = React.useState(false);
   const openUri = () => {
     let u = uri;
