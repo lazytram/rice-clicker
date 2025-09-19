@@ -254,6 +254,7 @@ export default function HorseRace() {
           onNewRaceAndJoin={onNewRaceAndJoin}
           onExportPodium={onExportPodium}
           focusAddress={address || null}
+          onClickAnywhere={onClickAdvance}
         />
         <ClickButton
           onClick={onClickAdvance}

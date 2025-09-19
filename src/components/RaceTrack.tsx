@@ -16,6 +16,7 @@ type Props = {
   onNewRaceAndJoin: () => void | Promise<void>;
   onExportPodium: () => void | Promise<void>;
   focusAddress?: `0x${string}` | string | null;
+  onClickAnywhere?: () => void | Promise<void>;
 };
 
 export default function RaceTrack({
@@ -26,6 +27,7 @@ export default function RaceTrack({
   onNewRaceAndJoin,
   onExportPodium,
   focusAddress,
+  onClickAnywhere,
 }: Props) {
   const {
     scale,
@@ -48,7 +50,8 @@ export default function RaceTrack({
 
   const marks = React.useMemo(() => {
     if (!threshold || threshold <= 0) return [] as number[];
-    const step = Math.max(25, Math.round(threshold / 20));
+    // Wider columns: fewer vertical marks across the track
+    const step = Math.max(50, Math.round(threshold / 15));
     const list: number[] = [];
     for (let m = step; m < threshold; m += step) list.push(m);
     return list;
@@ -62,6 +65,9 @@ export default function RaceTrack({
           players.length > 0 ? padY * 2 + laneHeight * players.length : 160,
       }}
       ref={containerRef as React.RefObject<HTMLDivElement | null>}
+      onClick={() => {
+        if (status === "running" && onClickAnywhere) onClickAnywhere();
+      }}
     >
       <div className="race-barrier" style={{ top: padY - 6 }} />
       <div className="race-barrier" style={{ bottom: padY - 6 }} />
@@ -94,7 +100,7 @@ export default function RaceTrack({
           ))}
           <div
             className="absolute top-2 bg-white/90 px-1 rounded"
-            style={{ left: startLineLeft + trackLenPx + 6 }}
+            style={{ left: startLineLeft + trackLenPx - 22 }}
           >
             Finish
           </div>

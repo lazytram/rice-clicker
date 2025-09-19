@@ -33,7 +33,7 @@ export function useRaceTrackLayout(
     if (!el) return;
     const update = (w: number) => {
       setContainerWidth(w);
-      const s = Math.min(1, Math.max(0.4, w / 900));
+      const s = Math.min(1, Math.max(0.25, w / 900));
       setWidthScale(s);
     };
     const ro = new ResizeObserver((entries) => {
@@ -47,33 +47,31 @@ export function useRaceTrackLayout(
 
   const countScale = React.useMemo(() => {
     const numPlayers = playersCount || 1;
-    const idealVisibleLanes = 6;
+    const idealVisibleLanes = 5;
     const factor = idealVisibleLanes / numPlayers;
-    return Math.min(1, Math.max(0.6, factor));
+    return Math.min(1, Math.max(0.55, factor));
   }, [playersCount]);
 
   const scale = Math.min(widthScale, countScale);
 
   const BASE_TRACK_LEN = 720;
-  const laneHeight = Math.max(56, Math.round(120 * scale));
+  const laneHeight = Math.max(40, Math.round(120 * scale));
   const padY = Math.round(24 * scale);
   const startLineLeft = Math.round(90 * scale);
   const horseNoseOffset = Math.round(86 * scale);
   const baseOffset = startLineLeft - horseNoseOffset;
-  const horseSize = Math.max(56, Math.round(104 * scale));
+  const horseSize = Math.max(40, Math.round(104 * scale));
   const shadowWidth = Math.round(84 * scale);
   const shadowHeight = Math.round(16 * scale);
   const shadowTranslateY = Math.max(14, Math.round(horseSize - 10 * scale));
-  const innerPadRight = Math.round(12 * scale);
+  // Keep a fixed right padding so the finish line hugs the right edge consistently
+  const innerPadRight = 36; // px, not scaled
   const trackLenPx = containerWidth
     ? Math.max(
         Math.round(260 * scale),
-        Math.min(
-          Math.round(BASE_TRACK_LEN * scale),
-          Math.max(
-            120,
-            Math.round(containerWidth - startLineLeft - innerPadRight)
-          )
+        Math.max(
+          110,
+          Math.round(containerWidth - startLineLeft - innerPadRight)
         )
       )
     : Math.round(BASE_TRACK_LEN * scale);
@@ -98,4 +96,3 @@ export function useRaceTrackLayout(
     setContainerWidth,
   };
 }
-
