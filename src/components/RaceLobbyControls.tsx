@@ -3,6 +3,7 @@
 import React from "react";
 import { useToast } from "@/components/Toast";
 import type { LobbyState } from "@/hooks/useRaceLobby";
+import { RACE_THRESHOLD_OPTIONS } from "@/lib/constants";
 
 type Props = {
   name: string;
@@ -11,6 +12,8 @@ type Props = {
   onColorChange: (value: string) => void;
   capacity: number;
   onCapacityChange: (value: number) => void;
+  createThreshold: number;
+  onCreateThresholdChange: (value: number) => void;
   flow: "create" | "join";
   onFlowChange: (value: "create" | "join") => void;
   lobbyId: string | null;
@@ -25,6 +28,8 @@ type Props = {
   onLeave: () => void | Promise<void>;
 };
 
+export type RaceLobbyControlsProps = Props;
+
 export default function RaceLobbyControls({
   name,
   onNameChange,
@@ -32,6 +37,8 @@ export default function RaceLobbyControls({
   onColorChange,
   capacity,
   onCapacityChange,
+  createThreshold,
+  onCreateThresholdChange,
   flow,
   onFlowChange,
   lobbyId,
@@ -109,6 +116,10 @@ export default function RaceLobbyControls({
             <span className="opacity-70">Capacity</span>
             <span className="hud-badge">{lobby.capacity}</span>
           </div>
+          <div className="hud-pill text-sm">
+            <span className="opacity-70">Distance</span>
+            <span className="hud-badge">{lobby.threshold}</span>
+          </div>
         </>
       )}
       {!lobbyId ? (
@@ -130,6 +141,23 @@ export default function RaceLobbyControls({
                   className="w-14 bg-transparent outline-none text-slate-900"
                   title="Players per race"
                 />
+              </div>
+              <div className="hud-pill text-sm">
+                <span className="opacity-70">Distance</span>
+                <select
+                  value={createThreshold}
+                  onChange={(e) =>
+                    onCreateThresholdChange(Number(e.target.value) || 250)
+                  }
+                  className="bg-transparent outline-none text-slate-900"
+                  title="Clicks to win"
+                >
+                  {RACE_THRESHOLD_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
               </div>
               <button
                 onClick={onCreateRace}

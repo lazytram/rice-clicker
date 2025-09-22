@@ -21,6 +21,8 @@ export default function HorseRace() {
     setColor,
     capacity,
     setCapacity,
+    createThreshold,
+    setCreateThreshold,
     joinLobbyIdInput,
     setJoinLobbyIdInput,
     flow,
@@ -51,6 +53,8 @@ export default function HorseRace() {
           onColorChange={setColor}
           capacity={capacity}
           onCapacityChange={setCapacity}
+          createThreshold={createThreshold}
+          onCreateThresholdChange={setCreateThreshold}
           flow={flow}
           onFlowChange={setFlow}
           lobbyId={lobbyId}

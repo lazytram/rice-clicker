@@ -1,1 +1,2 @@
 export const DEFAULT_RACE_THRESHOLD = 250;
+export const RACE_THRESHOLD_OPTIONS = [50, 100, 150, 200, 250];

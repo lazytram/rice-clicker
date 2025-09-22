@@ -3,7 +3,10 @@
 import React from "react";
 import { useToast } from "@/components/Toast";
 import { useRaceLobby } from "@/hooks/useRaceLobby";
-import { DEFAULT_RACE_THRESHOLD } from "@/lib/constants";
+import {
+  DEFAULT_RACE_THRESHOLD,
+  RACE_THRESHOLD_OPTIONS,
+} from "@/lib/constants";
 import { useEmbeddedNonce } from "@/hooks/useEmbeddedNonce";
 import { useEmbeddedClick } from "@/hooks/useEmbeddedClick";
 import { usePodiumExport } from "@/hooks/usePodiumExport";
@@ -26,6 +29,9 @@ export function useHorseRaceController() {
   const [name, setName] = React.useState("");
   const [color, setColor] = React.useState("#ff5a5f");
   const [capacity, setCapacity] = React.useState(5);
+  const [createThreshold, setCreateThreshold] = React.useState<number>(
+    DEFAULT_RACE_THRESHOLD
+  );
   const [joinLobbyIdInput, setJoinLobbyIdInput] = React.useState("");
   const [flow, setFlow] = React.useState<"create" | "join">("create");
   const [fundOpen, setFundOpen] = React.useState(false);
@@ -180,6 +186,9 @@ export function useHorseRaceController() {
     }
     const next = await create({
       capacity: Math.max(2, Math.min(10, capacity || 5)),
+      threshold: RACE_THRESHOLD_OPTIONS.includes(createThreshold)
+        ? createThreshold
+        : DEFAULT_RACE_THRESHOLD,
       address,
       name,
       color,
@@ -312,6 +321,9 @@ export function useHorseRaceController() {
       }
       const next = await create({
         capacity: Math.max(2, Math.min(10, lobby?.capacity || 5)),
+        threshold: RACE_THRESHOLD_OPTIONS.includes(createThreshold)
+          ? createThreshold
+          : DEFAULT_RACE_THRESHOLD,
         address,
         name,
         color,
@@ -339,6 +351,8 @@ export function useHorseRaceController() {
     setColor,
     capacity,
     setCapacity,
+    createThreshold,
+    setCreateThreshold,
     joinLobbyIdInput,
     setJoinLobbyIdInput,
     flow,
@@ -361,4 +375,3 @@ export function useHorseRaceController() {
     onExportPodium,
   } as const;
 }
-
