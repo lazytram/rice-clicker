@@ -4,12 +4,17 @@ import React from "react";
 import type { RaceLog, Identity } from "@/hooks/useRaceResults";
 import ParticipantRow from "@/components/ParticipantRow";
 import UriActions from "@/components/UriActions";
-import {
-  useAccount,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
 import { RaceRegistryAbi } from "@/abi/RaceRegistry";
+import {
+  encodeFunctionData,
+  webSocket,
+  createWalletClient,
+  createPublicClient,
+  http,
+} from "viem";
+import { riseTestnet } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+import { createPublicShredClient, sendRawTransactionSync } from "shreds/viem";
 
 function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -27,17 +32,79 @@ type Props = {
 };
 
 export default function RaceCard({ race: r, identities, onSaved }: Props) {
-  const { address } = useAccount();
-  const { data: hash, writeContractAsync, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const [embeddedAddr, setEmbeddedAddr] = React.useState<string | null>(null);
   const registryAddress = (process.env.NEXT_PUBLIC_RACE_REGISTRY_ADDRESS ||
     "0x0000000000000000000000000000000000000000") as `0x${string}`;
 
+  // RPC clients
+  const wsUrl =
+    process.env.NEXT_PUBLIC_RISE_WS_URL || "wss://testnet.riselabs.xyz/ws";
+  const publicClient = React.useMemo(
+    () =>
+      createPublicClient({
+        chain: riseTestnet,
+        transport: webSocket(wsUrl),
+      }),
+    [wsUrl]
+  );
+  const httpUrl = React.useMemo(() => {
+    try {
+      if (wsUrl.startsWith("wss://")) {
+        return wsUrl.replace(/^wss:\/\//, "https://").replace(/\/ws$/, "");
+      }
+      if (wsUrl.startsWith("ws://")) {
+        return wsUrl.replace(/^ws:\/\//, "http://").replace(/\/ws$/, "");
+      }
+      return wsUrl.replace(/\/ws$/, "");
+    } catch {
+      return wsUrl;
+    }
+  }, [wsUrl]);
+
+  // Embedded account
   React.useEffect(() => {
-    if (isSuccess && onSaved) onSaved();
-  }, [isSuccess, onSaved]);
+    try {
+      const k =
+        typeof window !== "undefined"
+          ? localStorage.getItem("embedded_privkey")
+          : null;
+      if (!k) return setEmbeddedAddr(null);
+      const pk = k.startsWith("0x")
+        ? (k as `0x${string}`)
+        : (("0x" + k) as `0x${string}`);
+      const acct = privateKeyToAccount(pk);
+      setEmbeddedAddr(acct.address);
+    } catch {
+      setEmbeddedAddr(null);
+    }
+  }, []);
+
+  // Nonce management (same approach as clicker)
+  const embeddedNextNonceRef = React.useRef<bigint | null>(null);
+  const embeddedNonceChainRef = React.useRef<Promise<void>>(Promise.resolve());
+  const getNextEmbeddedNonce = React.useCallback(
+    async (address: `0x${string}`) => {
+      const assignNext = async () => {
+        if (embeddedNextNonceRef.current === null) {
+          const remote = await publicClient.getTransactionCount({
+            address,
+            blockTag: "pending",
+          });
+          embeddedNextNonceRef.current = BigInt(remote);
+        }
+        const current = embeddedNextNonceRef.current!;
+        embeddedNextNonceRef.current = current + 1n;
+        return current;
+      };
+      const next = embeddedNonceChainRef.current.then(assignNext, assignNext);
+      embeddedNonceChainRef.current = next.then(
+        () => undefined,
+        () => undefined
+      );
+      return next;
+    },
+    [publicClient]
+  );
 
   const [savingFor, setSavingFor] = React.useState<boolean>(false);
   const [validating, setValidating] = React.useState<boolean>(false);
@@ -45,35 +112,204 @@ export default function RaceCard({ race: r, identities, onSaved }: Props) {
 
   const winnerId = identities[r.winner];
   const isWinner =
-    !!address && r.winner && address.toLowerCase() === r.winner.toLowerCase();
+    !!embeddedAddr &&
+    r.winner &&
+    embeddedAddr.toLowerCase() === r.winner.toLowerCase();
   const canValidate = !!r.pendingWinnerGameUri && !r.winnerGameUri;
   const max = r.finishTotals.reduce((m, v) => (v > m ? v : m), 0n);
 
   const onPropose = async () => {
     const v = uri.trim();
     if (!v) return;
+    // require embedded key
+    const k =
+      typeof window !== "undefined"
+        ? localStorage.getItem("embedded_privkey")
+        : null;
+    if (!k) return;
     setSavingFor(true);
     try {
-      await writeContractAsync({
-        address: registryAddress,
+      const pk = k.startsWith("0x")
+        ? (k as `0x${string}`)
+        : (("0x" + k) as `0x${string}`);
+      const account = privateKeyToAccount(pk);
+      const client = createWalletClient({
+        account,
+        chain: riseTestnet,
+        transport: webSocket(wsUrl),
+      });
+      const data = encodeFunctionData({
         abi: RaceRegistryAbi,
         functionName: "proposeWinnerGame",
         args: [r.id, v],
       });
+      const gasEstimated = await publicClient.estimateGas({
+        account: account.address,
+        to: registryAddress,
+        data,
+      });
+      const gas = (gasEstimated * 105n) / 100n;
+      const GAS_TIP = 1n;
+      const DEFAULT_GAS_PRICE = 1n;
+      const serialized: `0x${string}` = await (async () => {
+        try {
+          const block = await publicClient.getBlock({ blockTag: "pending" });
+          if (block.baseFeePerGas != null) {
+            const maxFeePerGas = block.baseFeePerGas + GAS_TIP;
+            return client.signTransaction({
+              chain: riseTestnet,
+              account,
+              to: registryAddress,
+              data,
+              nonce: Number(await getNextEmbeddedNonce(account.address)),
+              gas,
+              maxFeePerGas,
+              maxPriorityFeePerGas: GAS_TIP,
+            });
+          }
+          return client.signTransaction({
+            chain: riseTestnet,
+            account,
+            to: registryAddress,
+            data,
+            nonce: Number(await getNextEmbeddedNonce(account.address)),
+            gas,
+            gasPrice: DEFAULT_GAS_PRICE,
+          });
+        } catch {
+          return client.signTransaction({
+            chain: riseTestnet,
+            account,
+            to: registryAddress,
+            data,
+            nonce: Number(await getNextEmbeddedNonce(account.address)),
+            gas,
+            gasPrice: DEFAULT_GAS_PRICE,
+          });
+        }
+      })();
+      const shredClient = createPublicShredClient({
+        chain: riseTestnet,
+        transport: webSocket(wsUrl),
+      });
+      try {
+        await sendRawTransactionSync(shredClient, {
+          serializedTransaction: serialized,
+        });
+      } catch (e) {
+        try {
+          const shredHttp = createPublicShredClient({
+            chain: riseTestnet,
+            transport: http(httpUrl),
+          });
+          await sendRawTransactionSync(shredHttp, {
+            serializedTransaction: serialized,
+          });
+        } catch {
+          const hash = await publicClient.sendRawTransaction({
+            serializedTransaction: serialized,
+          });
+          await publicClient.waitForTransactionReceipt({ hash });
+        }
+      }
+      onSaved?.();
     } finally {
       setSavingFor(false);
     }
   };
 
   const onValidate = async () => {
+    const k =
+      typeof window !== "undefined"
+        ? localStorage.getItem("embedded_privkey")
+        : null;
+    if (!k) return;
     setValidating(true);
     try {
-      await writeContractAsync({
-        address: registryAddress,
+      const pk = k.startsWith("0x")
+        ? (k as `0x${string}`)
+        : (("0x" + k) as `0x${string}`);
+      const account = privateKeyToAccount(pk);
+      const client = createWalletClient({
+        account,
+        chain: riseTestnet,
+        transport: webSocket(wsUrl),
+      });
+      const data = encodeFunctionData({
         abi: RaceRegistryAbi,
         functionName: "validateWinnerGame",
         args: [r.id],
       });
+      const gasEstimated = await publicClient.estimateGas({
+        account: account.address,
+        to: registryAddress,
+        data,
+      });
+      const gas = (gasEstimated * 105n) / 100n;
+      const GAS_TIP = 1n;
+      const DEFAULT_GAS_PRICE = 1n;
+      const serialized: `0x${string}` = await (async () => {
+        try {
+          const block = await publicClient.getBlock({ blockTag: "pending" });
+          if (block.baseFeePerGas != null) {
+            const maxFeePerGas = block.baseFeePerGas + GAS_TIP;
+            return client.signTransaction({
+              chain: riseTestnet,
+              account,
+              to: registryAddress,
+              data,
+              nonce: Number(await getNextEmbeddedNonce(account.address)),
+              gas,
+              maxFeePerGas,
+              maxPriorityFeePerGas: GAS_TIP,
+            });
+          }
+          return client.signTransaction({
+            chain: riseTestnet,
+            account,
+            to: registryAddress,
+            data,
+            nonce: Number(await getNextEmbeddedNonce(account.address)),
+            gas,
+            gasPrice: DEFAULT_GAS_PRICE,
+          });
+        } catch {
+          return client.signTransaction({
+            chain: riseTestnet,
+            account,
+            to: registryAddress,
+            data,
+            nonce: Number(await getNextEmbeddedNonce(account.address)),
+            gas,
+            gasPrice: DEFAULT_GAS_PRICE,
+          });
+        }
+      })();
+      const shredClient = createPublicShredClient({
+        chain: riseTestnet,
+        transport: webSocket(wsUrl),
+      });
+      try {
+        await sendRawTransactionSync(shredClient, {
+          serializedTransaction: serialized,
+        });
+      } catch (e) {
+        try {
+          const shredHttp = createPublicShredClient({
+            chain: riseTestnet,
+            transport: http(httpUrl),
+          });
+          await sendRawTransactionSync(shredHttp, {
+            serializedTransaction: serialized,
+          });
+        } catch {
+          const hash = await publicClient.sendRawTransaction({
+            serializedTransaction: serialized,
+          });
+          await publicClient.waitForTransactionReceipt({ hash });
+        }
+      }
+      onSaved?.();
     } finally {
       setValidating(false);
     }
@@ -148,27 +384,15 @@ export default function RaceCard({ race: r, identities, onSaved }: Props) {
               value={uri}
               onChange={(e) => setUri(e.target.value)}
             />
-            <button
-              className="btn"
-              onClick={onPropose}
-              disabled={isPending || isConfirming || savingFor}
-            >
-              {savingFor && (isPending || isConfirming)
-                ? "Proposing…"
-                : "Propose"}
+            <button className="btn" onClick={onPropose} disabled={savingFor}>
+              {savingFor ? "Proposing…" : "Propose"}
             </button>
           </div>
         )}
         {!r.winnerGameUri && canValidate && (
           <div className="mt-2">
-            <button
-              className="btn"
-              onClick={onValidate}
-              disabled={isPending || isConfirming || validating}
-            >
-              {validating && (isPending || isConfirming)
-                ? "Validating…"
-                : "Validate (finalizer)"}
+            <button className="btn" onClick={onValidate} disabled={validating}>
+              {validating ? "Validating…" : "Validate (finalizer)"}
             </button>
           </div>
         )}

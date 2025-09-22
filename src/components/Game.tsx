@@ -78,8 +78,7 @@ export default function Game() {
             <div className="hud-card p-3 w-full max-w-5xl mx-auto text-sm flex flex-wrap items-center gap-3">
               <span className="font-medium">Race mode limited</span>
               <span className="opacity-70">
-                Activez la clé embarquée et alimentez-la pour des clics
-                on-chain.
+                Enable the embedded key and fund it to click on-chain.
               </span>
               <button className="btn" onClick={() => setFundOpen(true)}>
                 Open Wallet
