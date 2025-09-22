@@ -26,6 +26,7 @@ type Props = {
   onJoinById: () => void | Promise<void>;
   onJoin: () => void | Promise<void>;
   onLeave: () => void | Promise<void>;
+  onExitLobby: () => void | Promise<void>;
 };
 
 export type RaceLobbyControlsProps = Props;
@@ -51,6 +52,7 @@ export default function RaceLobbyControls({
   onJoinById,
   onJoin,
   onLeave,
+  onExitLobby,
 }: Props) {
   const { show } = useToast();
   const [copyMode, setCopyMode] = React.useState<"id" | "link">("id");
@@ -81,6 +83,10 @@ export default function RaceLobbyControls({
       show({ type: "error", message: "Unable to copy to clipboard" });
     }
   }, [getShareValue, show, copyMode]);
+
+  const handleExit = React.useCallback(() => {
+    void onExitLobby();
+  }, [onExitLobby]);
   return (
     <div
       className={`flex flex-wrap items-center gap-2 sm:gap-3 text-slate-900${
@@ -242,6 +248,13 @@ export default function RaceLobbyControls({
           </div>
           <button className="rk-btn sm ghost" onClick={handleCopy}>
             Copy
+          </button>
+          <button
+            className="rk-btn sm danger"
+            onClick={handleExit}
+            title="Leave lobby and clear URL"
+          >
+            Exit
           </button>
         </div>
       )}

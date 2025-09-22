@@ -37,6 +37,7 @@ export default function HorseRace() {
     onJoinById,
     onJoin,
     onLeave,
+    onExitLobby,
     onClickAdvance,
     onNewRace,
     onNewRaceAndJoin,
@@ -67,6 +68,7 @@ export default function HorseRace() {
           onJoinById={onJoinById}
           onJoin={onJoin}
           onLeave={onLeave}
+          onExitLobby={onExitLobby}
         />
       </div>
 

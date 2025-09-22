@@ -36,6 +36,33 @@ export function useHorseRaceController() {
   const [flow, setFlow] = React.useState<"create" | "join">("create");
   const [fundOpen, setFundOpen] = React.useState(false);
   const { show } = useToast();
+  // Load persisted name/color for smoother rejoin on refresh
+  React.useEffect(() => {
+    try {
+      const n =
+        typeof window !== "undefined"
+          ? localStorage.getItem("race_name")
+          : null;
+      const c =
+        typeof window !== "undefined"
+          ? localStorage.getItem("race_color")
+          : null;
+      if (n) setName(n);
+      if (c) setColor(c);
+    } catch {}
+  }, []);
+
+  // Persist name/color changes
+  React.useEffect(() => {
+    try {
+      if (name) localStorage.setItem("race_name", name);
+    } catch {}
+  }, [name]);
+  React.useEffect(() => {
+    try {
+      if (color) localStorage.setItem("race_color", color);
+    } catch {}
+  }, [color]);
 
   // Initialize from URL (?lobby=ID) or localStorage fallback
   React.useEffect(() => {
@@ -108,6 +135,19 @@ export function useHorseRaceController() {
 
   const status = lobby?.status;
   const threshold = lobby?.threshold ?? DEFAULT_RACE_THRESHOLD;
+  // Auto-join on refresh if we have address + lobbyId + name and we're not in yet
+  React.useEffect(() => {
+    (async () => {
+      try {
+        if (!address || !lobbyId || !lobby) return;
+        if (meIn) return;
+        if (!name.trim()) return; // require a name
+        // Only auto-join if race hasn't finished
+        if (lobby.status === "finished") return;
+        await join({ lobbyId, address, name, color });
+      } catch {}
+    })();
+  }, [address, lobbyId, lobby, meIn, name, color, join]);
 
   // Estimate required native token to finish a race and ensure balance
   const ensureBalanceForRace = React.useCallback(
@@ -307,6 +347,28 @@ export function useHorseRaceController() {
     } catch {}
   }, [address, leave, lobbyId]);
 
+  // Exit: leave (if possible), clear URL and storage
+  const onExitLobby = React.useCallback(async () => {
+    try {
+      if (address && lobbyId && lobby?.status === "waiting") {
+        try {
+          await leave({ lobbyId, address });
+        } catch {}
+      }
+      setLobbyId(null);
+      setJoinLobbyIdInput("");
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("lobby");
+        url.searchParams.delete("mode");
+        window.history.replaceState({}, "", url.toString());
+      } catch {}
+      try {
+        window.localStorage.removeItem("race_lobby_id");
+      } catch {}
+    } catch {}
+  }, [address, lobbyId, lobby, leave]);
+
   const sendEmbeddedClick = useEmbeddedClick({
     rpcUrl,
     getNextEmbeddedNonce,
@@ -384,6 +446,7 @@ export function useHorseRaceController() {
     onJoinById,
     onJoin,
     onLeave,
+    onExitLobby,
     onClickAdvance,
     onNewRace,
     onNewRaceAndJoin,
