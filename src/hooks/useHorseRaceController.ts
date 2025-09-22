@@ -246,7 +246,7 @@ export function useHorseRaceController() {
       color,
     });
     setLobbyId(next.id);
-  }, [address, capacity, color, create, name, show]);
+  }, [address, capacity, color, create, name, show, createThreshold]);
 
   const onJoinAnyRace = React.useCallback(async () => {
     if (!address) return;
@@ -337,6 +337,23 @@ export function useHorseRaceController() {
     show,
   ]);
 
+  // Debounced sync of name/color while waiting in lobby
+  React.useEffect(() => {
+    try {
+      if (!address || !lobbyId || !lobby) return;
+      if (lobby.status !== "waiting") return;
+      if (!meIn) return;
+      if (!name.trim()) return;
+      const nameChanged = meIn.name !== name;
+      const colorChanged = meIn.color !== color;
+      if (!nameChanged && !colorChanged) return;
+      const t = setTimeout(() => {
+        void join({ lobbyId, address, name, color }).catch(() => {});
+      }, 400);
+      return () => clearTimeout(t);
+    } catch {}
+  }, [address, lobbyId, lobby, meIn, name, color, join]);
+
   const onLeave = React.useCallback(async () => {
     if (!address || !lobbyId) return;
     await leave({ lobbyId, address });
@@ -386,30 +403,23 @@ export function useHorseRaceController() {
   }, [address, advance, lobbyId, sendEmbeddedClick]);
 
   const onNewRace = React.useCallback(async () => {
+    // Do not auto-create or join. Exit current lobby and go back to create flow
+    // Prefill with last race params so the user can tweak them
     try {
-      if (!address) return;
-      if (!name.trim()) {
-        show({
-          type: "info",
-          title: "Name required",
-          message: "Please enter your name before creating a race.",
-        });
-        return;
-      }
-      const next = await create({
-        capacity: Math.max(2, Math.min(10, lobby?.capacity || 5)),
-        threshold: RACE_THRESHOLD_OPTIONS.includes(createThreshold)
-          ? createThreshold
-          : DEFAULT_RACE_THRESHOLD,
-        address,
-        name,
-        color,
-      });
-      setLobbyId(next.id);
+      if (typeof lobby?.capacity === "number") setCapacity(lobby.capacity);
+      if (typeof lobby?.threshold === "number")
+        setCreateThreshold(lobby.threshold);
     } catch {}
-  }, [address, color, create, lobby?.capacity, name, show]);
-
-  const onNewRaceAndJoin = onNewRace;
+    setFlow("create");
+    await onExitLobby();
+  }, [
+    lobby?.capacity,
+    lobby?.threshold,
+    onExitLobby,
+    setCapacity,
+    setCreateThreshold,
+    setFlow,
+  ]);
 
   const onExportPodium = usePodiumExport(
     lobby?.players || [],
@@ -449,7 +459,6 @@ export function useHorseRaceController() {
     onExitLobby,
     onClickAdvance,
     onNewRace,
-    onNewRaceAndJoin,
     onExportPodium,
   } as const;
 }

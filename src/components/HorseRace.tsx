@@ -40,7 +40,6 @@ export default function HorseRace() {
     onExitLobby,
     onClickAdvance,
     onNewRace,
-    onNewRaceAndJoin,
     onExportPodium,
   } = useHorseRaceController();
 
@@ -83,7 +82,6 @@ export default function HorseRace() {
           status={status}
           threshold={threshold}
           onNewRace={onNewRace}
-          onNewRaceAndJoin={onNewRaceAndJoin}
           onExportPodium={onExportPodium}
           focusAddress={address || null}
           onClickAnywhere={onClickAdvance}
@@ -99,7 +97,6 @@ export default function HorseRace() {
         threshold={threshold}
         visible={lobby?.status === "finished"}
         onNewRace={onNewRace}
-        onNewRaceAndJoin={onNewRaceAndJoin}
         onExportPodium={onExportPodium}
       />
 

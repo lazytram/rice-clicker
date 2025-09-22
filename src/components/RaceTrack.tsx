@@ -13,7 +13,6 @@ type Props = {
   status: LobbyState["status"] | undefined;
   threshold: number;
   onNewRace: () => void | Promise<void>;
-  onNewRaceAndJoin: () => void | Promise<void>;
   onExportPodium: () => void | Promise<void>;
   focusAddress?: `0x${string}` | string | null;
   onClickAnywhere?: () => void | Promise<void>;
@@ -24,7 +23,6 @@ export default function RaceTrack({
   status,
   threshold,
   onNewRace,
-  onNewRaceAndJoin,
   onExportPodium,
   focusAddress,
   onClickAnywhere,
@@ -128,7 +126,10 @@ export default function RaceTrack({
           const top = padY + i * laneHeight;
           const ratio = threshold > 0 ? p.clicks / threshold : 0;
           // Allow subpixel progress for smoother movement; clamp to [0, trackLenPx]
-          const progress = threshold > 0 ? Math.max(0, Math.min(trackLenPx, ratio * trackLenPx)) : 0;
+          const progress =
+            threshold > 0
+              ? Math.max(0, Math.min(trackLenPx, ratio * trackLenPx))
+              : 0;
           return (
             <div
               key={p.address}
@@ -144,7 +145,7 @@ export default function RaceTrack({
                   borderColor: "rgba(255,255,255,0.75)",
                 }}
               />
-                <motion.div
+              <motion.div
                 className="absolute bottom-1 left-2 flex flex-col items-center"
                 animate={{ x: progress + baseOffset }}
                 transition={{ type: "spring", stiffness: 140, damping: 20 }}
@@ -223,12 +224,6 @@ export default function RaceTrack({
                     >
                       <button onClick={onNewRace} className="rk-btn text-sm">
                         New race
-                      </button>
-                      <button
-                        onClick={onNewRaceAndJoin}
-                        className="rk-btn primary text-sm"
-                      >
-                        New race & Join
                       </button>
                       <button
                         onClick={onExportPodium}

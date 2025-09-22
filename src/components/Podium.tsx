@@ -8,7 +8,6 @@ type Props = {
   threshold: number;
   visible: boolean;
   onNewRace: () => void | Promise<void>;
-  onNewRaceAndJoin: () => void | Promise<void>;
   onExportPodium: () => void | Promise<void>;
 };
 
@@ -17,7 +16,6 @@ export default function Podium({
   threshold,
   visible,
   onNewRace,
-  onNewRaceAndJoin,
   onExportPodium,
 }: Props) {
   if (!visible) return null;
@@ -56,9 +54,6 @@ export default function Podium({
       <div className="mt-4 flex items-center justify-center gap-3">
         <button onClick={onNewRace} className="rk-btn">
           New race
-        </button>
-        <button onClick={onNewRaceAndJoin} className="rk-btn primary">
-          New race & Join
         </button>
         <button onClick={onExportPodium} className="rk-btn">
           Export podium

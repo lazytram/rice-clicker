@@ -133,12 +133,13 @@ export async function POST(req: NextRequest) {
       return new Response("missing fields", { status: 400 });
     if (lobby.status !== "waiting")
       return new Response("race already started", { status: 409 });
-    if (lobby.players.length >= lobby.capacity)
-      return new Response("lobby full", { status: 409 });
     const key = String(address).toLowerCase();
     const exists = lobby.players.find((p) => p.address.toLowerCase() === key);
-    if (!exists) lobby.players.push({ address, name, color, clicks: 0 });
-    else {
+    if (!exists) {
+      if (lobby.players.length >= lobby.capacity)
+        return new Response("lobby full", { status: 409 });
+      lobby.players.push({ address, name, color, clicks: 0 });
+    } else {
       exists.name = name;
       exists.color = color;
     }
