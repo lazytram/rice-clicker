@@ -221,7 +221,10 @@ export function useRaceLobby(lobbyId?: string) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "advance", ...p }),
       });
-      if (!res.ok) throw new Error("advance failed");
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || "advance failed");
+      }
       return res.json();
     },
     // Optimistic update so the horse moves on every click immediately

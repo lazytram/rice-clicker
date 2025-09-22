@@ -146,8 +146,8 @@ export default function RiceClicker() {
         : (("0x" + k) as `0x${string}`);
       const account = privateKeyToAccount(pk);
       const rpc = wsUrl;
-      const GAS_TIP = 1n;
-      const DEFAULT_GAS_PRICE = 1n;
+      const GAS_TIP = 0n;
+      const DEFAULT_GAS_PRICE = 0n;
       const client = createWalletClient({
         account,
         chain: riseTestnet,
@@ -166,7 +166,7 @@ export default function RiceClicker() {
         to: addressContract,
         data,
       });
-      const gas = (gasEstimated * BigInt(105)) / BigInt(100);
+      const gas = (gasEstimated * BigInt(101)) / BigInt(100);
       const serialized: `0x${string}` = await (async () => {
         try {
           const block = await publicClient.getBlock({ blockTag: "pending" });

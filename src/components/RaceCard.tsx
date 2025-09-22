@@ -148,9 +148,9 @@ export default function RaceCard({ race: r, identities, onSaved }: Props) {
         to: registryAddress,
         data,
       });
-      const gas = (gasEstimated * 105n) / 100n;
-      const GAS_TIP = 1n;
-      const DEFAULT_GAS_PRICE = 1n;
+      const gas = (gasEstimated * 101n) / 100n;
+      const GAS_TIP = 0n;
+      const DEFAULT_GAS_PRICE = 0n;
       const serialized: `0x${string}` = await (async () => {
         try {
           const block = await publicClient.getBlock({ blockTag: "pending" });
@@ -245,9 +245,9 @@ export default function RaceCard({ race: r, identities, onSaved }: Props) {
         to: registryAddress,
         data,
       });
-      const gas = (gasEstimated * 105n) / 100n;
-      const GAS_TIP = 1n;
-      const DEFAULT_GAS_PRICE = 1n;
+      const gas = (gasEstimated * 101n) / 100n;
+      const GAS_TIP = 0n;
+      const DEFAULT_GAS_PRICE = 0n;
       const serialized: `0x${string}` = await (async () => {
         try {
           const block = await publicClient.getBlock({ blockTag: "pending" });

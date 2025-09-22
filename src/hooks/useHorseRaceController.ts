@@ -193,12 +193,11 @@ export function useHorseRaceController() {
         });
         const gasPerClick = (gasEstimated * 105n) / 100n; // +5%
 
-        // Price per gas (use EIP-1559 baseFee + small tip if available, else 1)
-        let pricePerGas = 1n;
+        // Price per gas (use EIP-1559 baseFee if available, else 1)
+        let pricePerGas = 0n;
         try {
           const block = await publicClient.getBlock({ blockTag: "pending" });
-          if (block.baseFeePerGas != null)
-            pricePerGas = block.baseFeePerGas + 1n;
+          if (block.baseFeePerGas != null) pricePerGas = block.baseFeePerGas;
         } catch {}
 
         const requiredWei =
@@ -395,12 +394,13 @@ export function useHorseRaceController() {
   });
 
   const onClickAdvance = React.useCallback(async () => {
-    if (!address || !lobbyId) return;
-    try {
-      void advance({ lobbyId, address, amount: 1 });
-    } catch {}
+    if (!address || !lobbyId || !lobby) return;
+    if (lobby.status !== "running") return;
+    if (!meIn) return;
+    // Fire-and-forget but prevent unhandled promise rejection in console
+    advance({ lobbyId, address, amount: 1 }).catch(() => {});
     await sendEmbeddedClick();
-  }, [address, advance, lobbyId, sendEmbeddedClick]);
+  }, [address, advance, lobby, lobbyId, meIn, sendEmbeddedClick]);
 
   const onNewRace = React.useCallback(async () => {
     // Do not auto-create or join. Exit current lobby and go back to create flow

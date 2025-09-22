@@ -77,14 +77,14 @@ export function useEmbeddedClick({
         to: contractAddress,
         data,
       });
-      const gas = (gasEstimated * BigInt(105)) / BigInt(100);
-      const GAS_TIP = 1n;
-      const DEFAULT_GAS_PRICE = 1n;
+      const gas = (gasEstimated * BigInt(101)) / BigInt(100);
+      const GAS_TIP = 0n;
+      const DEFAULT_GAS_PRICE = 0n;
 
       // Optional pre-check (same assumptions as clicker)
       try {
         const bal = await publicClient.getBalance({ address: account.address });
-        const required = gas * DEFAULT_GAS_PRICE;
+        const required = gas * (GAS_TIP || DEFAULT_GAS_PRICE || 0n);
         if (bal < required) {
           onInsufficientFunds?.();
           show({
