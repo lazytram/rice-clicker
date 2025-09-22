@@ -21,7 +21,13 @@ type Lobby = {
   createdAt: number;
 };
 
-const lobbies = new Map<string, Lobby>();
+// Persist lobbies across hot-reloads within the same process
+const globalForLobbies = globalThis as unknown as {
+  __RACE_LOBBIES__?: Map<string, Lobby>;
+};
+const lobbies: Map<string, Lobby> =
+  globalForLobbies.__RACE_LOBBIES__ ||
+  (globalForLobbies.__RACE_LOBBIES__ = new Map<string, Lobby>());
 
 function createLobby(opts?: { capacity?: number; threshold?: number }) {
   const id = Math.random().toString(36).slice(2, 8) + Date.now().toString(36);

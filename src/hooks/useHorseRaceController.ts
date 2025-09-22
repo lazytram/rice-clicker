@@ -37,14 +37,19 @@ export function useHorseRaceController() {
   const [fundOpen, setFundOpen] = React.useState(false);
   const { show } = useToast();
 
-  // Initialize from URL (?lobby=ID)
+  // Initialize from URL (?lobby=ID) or localStorage fallback
   React.useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const fromUrl = params.get("lobby");
-      if (fromUrl) {
-        setLobbyId(fromUrl);
-        setJoinLobbyIdInput(fromUrl);
+      const fromStorage =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("race_lobby_id")
+          : null;
+      const nextId = fromUrl || fromStorage;
+      if (nextId) {
+        setLobbyId(nextId);
+        setJoinLobbyIdInput(nextId);
         setFlow("join");
       }
     } catch {}
@@ -58,8 +63,15 @@ export function useHorseRaceController() {
         url.searchParams.set("lobby", lobbyId);
         // ensure race mode for shared links
         url.searchParams.set("mode", "race");
+        // persist for refresh safety
+        try {
+          window.localStorage.setItem("race_lobby_id", lobbyId);
+        } catch {}
       } else {
         url.searchParams.delete("lobby");
+        try {
+          window.localStorage.removeItem("race_lobby_id");
+        } catch {}
       }
       window.history.replaceState({}, "", url.toString());
     } catch {}
@@ -290,6 +302,9 @@ export function useHorseRaceController() {
     await leave({ lobbyId, address });
     setLobbyId(null);
     setJoinLobbyIdInput("");
+    try {
+      window.localStorage.removeItem("race_lobby_id");
+    } catch {}
   }, [address, leave, lobbyId]);
 
   const sendEmbeddedClick = useEmbeddedClick({

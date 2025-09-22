@@ -1,6 +1,12 @@
 "use client";
 
+import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  RealtimeChannel,
+  RealtimeBroadcastEnvelope,
+} from "@supabase/supabase-js";
+import { getSupabaseClient } from "@/lib/supabase";
 
 export type LobbyPlayer = {
   address: string;
@@ -32,14 +38,78 @@ async function fetchLobby(lobbyId: string): Promise<LobbyState> {
 
 export function useRaceLobby(lobbyId?: string) {
   const qc = useQueryClient();
+  const supabase = getSupabaseClient();
+  const channelRef = React.useRef<RealtimeChannel | null>(null);
+
+  function mergeMonotonic(
+    prev: LobbyState | undefined,
+    next: LobbyState
+  ): LobbyState {
+    if (!prev) return next;
+    return {
+      ...next,
+      players: next.players.map((playerNext) => {
+        const playerPrev = prev.players.find(
+          (op) => op.address.toLowerCase() === playerNext.address.toLowerCase()
+        );
+        return playerPrev
+          ? {
+              ...playerNext,
+              clicks: Math.max(playerNext.clicks, playerPrev.clicks),
+            }
+          : playerNext;
+      }),
+    };
+  }
+
+  function broadcastLobby(next: LobbyState) {
+    try {
+      type LobbyPayload = { lobby: LobbyState };
+      channelRef.current?.send<LobbyPayload>({
+        type: "broadcast",
+        event: "lobby:update",
+        payload: { lobby: next },
+      });
+    } catch {}
+  }
 
   const query = useQuery<LobbyState>({
     queryKey: ["race-lobby", lobbyId],
     queryFn: () => fetchLobby(lobbyId as string),
-    refetchInterval: lobbyId ? 150 : false,
-    staleTime: 75,
+    // Keep a light safety poll to pick up server-side transitions
+    refetchInterval: lobbyId ? (supabase ? 1000 : 250) : false,
+    staleTime: 200,
     enabled: !!lobbyId,
+    select: (next): LobbyState => {
+      const prev = qc.getQueryData<LobbyState>(["race-lobby", lobbyId]);
+      return mergeMonotonic(prev, next);
+    },
   });
+
+  // Subscribe to realtime updates for this lobby
+  React.useEffect(() => {
+    if (!supabase || !lobbyId) return;
+    const ch = supabase.channel(`lobby:${lobbyId}`, {
+      config: { broadcast: { self: false } },
+    });
+    type LobbyPayload = { lobby: LobbyState };
+    ch.on<LobbyPayload>(
+      "broadcast",
+      { event: "lobby:update" },
+      (msg: RealtimeBroadcastEnvelope<LobbyPayload>) => {
+        const next: LobbyState | undefined = msg?.payload?.lobby;
+        if (!next || next.id !== lobbyId) return;
+        const prev = qc.getQueryData<LobbyState>(["race-lobby", lobbyId]);
+        qc.setQueryData(["race-lobby", lobbyId], mergeMonotonic(prev, next));
+      }
+    );
+    ch.subscribe(() => {});
+    channelRef.current = ch;
+    return () => {
+      channelRef.current = null;
+      supabase.removeChannel(ch);
+    };
+  }, [supabase, lobbyId, qc]);
 
   const create = useMutation({
     mutationFn: async (p: {
@@ -57,6 +127,10 @@ export function useRaceLobby(lobbyId?: string) {
       if (!res.ok) throw new Error("create failed");
       return res.json() as Promise<LobbyState>;
     },
+    onSuccess: (next: LobbyState) => {
+      qc.setQueryData(["race-lobby", lobbyId], next);
+      broadcastLobby(next);
+    },
   });
 
   const joinAny = useMutation({
@@ -68,6 +142,10 @@ export function useRaceLobby(lobbyId?: string) {
       });
       if (!res.ok) throw new Error("joinAny failed");
       return res.json() as Promise<LobbyState>;
+    },
+    onSuccess: (next: LobbyState) => {
+      qc.setQueryData(["race-lobby", next.id], next);
+      broadcastLobby(next);
     },
   });
 
@@ -86,8 +164,10 @@ export function useRaceLobby(lobbyId?: string) {
       if (!res.ok) throw new Error("join failed");
       return res.json();
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["race-lobby", lobbyId] }),
+    onSuccess: (next: LobbyState) => {
+      qc.setQueryData(["race-lobby", lobbyId], next);
+      broadcastLobby(next);
+    },
   });
 
   const leave = useMutation({
@@ -100,8 +180,10 @@ export function useRaceLobby(lobbyId?: string) {
       if (!res.ok) throw new Error("leave failed");
       return res.json();
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["race-lobby", lobbyId] }),
+    onSuccess: (next: LobbyState) => {
+      qc.setQueryData(["race-lobby", lobbyId], next);
+      broadcastLobby(next);
+    },
   });
 
   const start = useMutation({
@@ -117,11 +199,18 @@ export function useRaceLobby(lobbyId?: string) {
       }
       return res.json();
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["race-lobby", lobbyId] }),
+    onSuccess: (next: LobbyState) => {
+      qc.setQueryData(["race-lobby", lobbyId], next);
+      broadcastLobby(next);
+    },
   });
 
-  const advance = useMutation({
+  const advance = useMutation<
+    LobbyState,
+    Error,
+    { lobbyId: string; address: string; amount?: number },
+    { prev?: LobbyState }
+  >({
     mutationFn: async (p: {
       lobbyId: string;
       address: string;
@@ -154,13 +243,17 @@ export function useRaceLobby(lobbyId?: string) {
         };
         qc.setQueryData(["race-lobby", lobbyId], next);
       }
-      return { prev } as { prev?: LobbyState };
+      return { prev };
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(["race-lobby", lobbyId], ctx.prev);
     },
-    onSettled: () =>
-      qc.invalidateQueries({ queryKey: ["race-lobby", lobbyId] }),
+    onSuccess: (next: LobbyState) => {
+      const prev = qc.getQueryData<LobbyState>(["race-lobby", lobbyId]);
+      const merged = mergeMonotonic(prev, next);
+      qc.setQueryData(["race-lobby", lobbyId], merged);
+      broadcastLobby(merged);
+    },
   });
 
   const reset = useMutation({
@@ -173,8 +266,10 @@ export function useRaceLobby(lobbyId?: string) {
       if (!res.ok) throw new Error("reset failed");
       return res.json();
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["race-lobby", lobbyId] }),
+    onSuccess: (next: LobbyState) => {
+      qc.setQueryData(["race-lobby", lobbyId], next);
+      broadcastLobby(next);
+    },
   });
 
   return {
