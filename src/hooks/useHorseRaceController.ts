@@ -397,9 +397,11 @@ export function useHorseRaceController() {
     if (!address || !lobbyId || !lobby) return;
     if (lobby.status !== "running") return;
     if (!meIn) return;
-    // Fire-and-forget but prevent unhandled promise rejection in console
-    advance({ lobbyId, address, amount: 1 }).catch(() => {});
-    await sendEmbeddedClick();
+    try {
+      // Ensure TX is sent; then reflect the click on the server
+      await sendEmbeddedClick();
+      await advance({ lobbyId, address, amount: 1 }).catch(() => {});
+    } catch {}
   }, [address, advance, lobby, lobbyId, meIn, sendEmbeddedClick]);
 
   const onNewRace = React.useCallback(async () => {
